@@ -1,0 +1,61 @@
+sequenceDiagram
+    autonumber
+    actor User as 使用者
+    participant Web as React 页面
+    participant API as Node API / Client
+    participant Server as Temporal Server
+    participant WFT as Worker: Workflow Task
+    participant ACT as Worker: Activity Task
+
+    User->>Web: 创建订单
+    Web->>API: POST /api/orders
+    API->>Server: workflow.start(orderWorkflow, input)
+    Server->>Server: 保存 WorkflowExecutionStarted 并调度首个任务
+    Server-->>API: 启动成功，返回执行标识
+    API-->>Web: HTTP 201，workflowId 和 runId
+    Note over Web,ACT: 创建请求的完成与后续业务执行异步进行
+
+    WFT->>Server: 轮询 Workflow Task
+    Server-->>WFT: 返回任务与所需历史
+    WFT->>WFT: 初始化 state，注册 Signal / Query
+    WFT->>Server: 提交 ScheduleActivity 命令：reserveInventory
+    Server->>Server: 保存 ActivityTaskScheduled
+    ACT->>Server: 轮询 Activity Task
+    Server-->>ACT: reserveInventory(activityArgs)
+    ACT->>ACT: 执行约 1.4 秒模拟业务调用
+    ACT->>Server: 报告 Activity 完成
+    Server->>Server: 保存 ActivityTaskCompleted，调度 Workflow Task
+    WFT->>Server: 轮询下一次 Workflow Task
+    Server-->>WFT: 返回库存执行结果
+    WFT->>WFT: 完成库存 await，继续安排 chargePayment
+    Note over Server,ACT: 付款使用相同的调度机制，失败由 Server 按策略重试
+
+    WFT->>WFT: 付款成功，进入 waiting_approval
+    WFT->>Server: condition 等待确认，并创建持久化 Timer
+
+    loop 页面读取状态，完成后约 1.5 秒再次请求
+        Web->>API: GET /api/orders/:workflowId
+        API->>Server: describe、fetchHistory、query(orderState)
+        Server->>WFT: 路由 Query 到 Worker
+        WFT-->>Server: 只读返回 state
+        Server-->>API: 执行状态、History、业务状态
+        API-->>Web: OrderDetail
+    end
+
+    User->>Web: 发送确认 Signal
+    Web->>API: POST /api/orders/:workflowId/approve
+    API->>Server: describe 和 query 检查是否等待确认
+    API->>Server: handle.signal(approveOrder)
+    Server->>Server: 持久化 WorkflowExecutionSignaled
+    Server-->>API: Signal 已接收
+    API-->>Web: 确认请求已提交
+    WFT->>Server: 轮询 Workflow Task
+    Server-->>WFT: 交付 Signal 事件
+    WFT->>WFT: handler 更新状态，condition 成立
+    WFT->>Server: 取消等待 Timer，安排 shipOrder
+    ACT->>Server: 轮询并执行发货 Activity，报告结果
+    WFT->>Server: 轮询并读取发货结果
+    WFT->>WFT: state.status = completed，return state
+    WFT->>Server: 提交完成 Workflow 命令
+    Server->>Server: 保存 WorkflowExecutionCompleted
+    Note over Web,Server: 页面下一次查询显示已完成及物流单号

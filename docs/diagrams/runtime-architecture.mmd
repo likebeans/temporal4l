@@ -1,0 +1,16 @@
+---
+config:
+  flowchart:
+    rankSpacing: 140
+    nodeSpacing: 70
+---
+flowchart LR
+    Browser["浏览器 · React<br/>展示与交互"]
+    API["Node API<br/>Temporal Client"]
+    Server["Temporal Server<br/>Task Queue · History · Timer"]
+    Worker["Node Worker<br/>执行 Workflow / Activity"]
+
+    Browser -->|HTTP| API
+    API -->|Client RPC| Server
+    Worker -->|"轮询 / 提交结果"| Server
+    Server -.->|"任务与历史"| Worker

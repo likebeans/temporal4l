@@ -1,0 +1,28 @@
+node_modules/
+dist/
+coverage/
+
+# Local configuration and runtime data
+.env
+.env.*
+!.env.example
+*.log
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+.temporal/
+.data/
+.playwright/
+playwright-report/
+test-results/
+artifacts/
+
+# Editor, OS and local agent files
+.DS_Store
+.idea/
+.vscode/
+.claude/
+*.tsbuildinfo

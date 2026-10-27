@@ -1,0 +1,30 @@
+sequenceDiagram
+    autonumber
+    participant Page as 实验向导 / API
+    participant Ledger as SQLite 支付账本
+    participant Server as Temporal Server
+    participant Before as 崩溃前的 Worker
+    participant After as 重启后的 Worker
+
+    Before->>Server: 库存与付款完成，确认后启动 packOrder
+    Before->>Server: heartbeat：完成 N 批，attempt 1
+    Page->>Server: Describe / Query / History
+    Server-->>Page: 同一 Run 与 N 批检查点
+    Page->>Ledger: 读取付款调用与扣款
+    Ledger-->>Page: 调用 1 次，扣款 1 笔
+    Note over Page: 保存实验基线
+    Note over Before: 强制结束本实验 Worker 进程
+    Note over Server: 保留 History 与最近收到的心跳
+    Server->>Server: 心跳超时，安排下一次尝试
+    Page->>Server: Query 暂不可用，继续读取执行信息
+    After->>Server: 轮询原 Task Queue
+    Server-->>After: packOrder 新尝试与 heartbeatDetails
+    After->>After: 从服务端保存的批次继续
+    After->>Server: 新心跳：attempt 增加、resumedFrom 大于 0
+    After->>Server: 打包完成，提交 Activity 结果
+    After->>After: 重放 Workflow，复用已完成付款结果
+    After->>Server: 发货并完成 Workflow
+    Page->>Server: 读取同一 Run 的恢复结果
+    Server-->>Page: COMPLETED 与最终检查点
+    Page->>Ledger: 重新读取支付流水
+    Ledger-->>Page: 付款调用与扣款次数未增加

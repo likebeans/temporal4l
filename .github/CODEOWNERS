@@ -1,0 +1,7 @@
+# 默认及核心运行路径由仓库维护者审阅。
+* @likebeans
+/.github/ @likebeans
+/server/ @likebeans
+/shared/ @likebeans
+/scripts/ @likebeans
+/tests/ @likebeans

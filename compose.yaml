@@ -1,0 +1,35 @@
+name: temporal-learning-demo
+
+services:
+  temporal:
+    image: temporalio/temporal:1.9.1
+    # 开发镜像默认用户无法写入 Docker 新建的数据卷。
+    user: "0:0"
+    entrypoint: ["temporal"]
+    command:
+      - server
+      - start-dev
+      - --log-level
+      - info
+      - --ip
+      - 0.0.0.0
+      - --ui-ip
+      - 0.0.0.0
+      - --namespace
+      - temporal-learning
+      - --db-filename
+      - /var/lib/temporal/learning.db
+    ports:
+      - "127.0.0.1:7233:7233"
+      - "127.0.0.1:8233:8233"
+    volumes:
+      - temporal-data:/var/lib/temporal
+    healthcheck:
+      test: ["CMD", "temporal", "operator", "cluster", "health", "--address", "127.0.0.1:7233"]
+      interval: 5s
+      timeout: 10s
+      retries: 20
+      start_period: 20s
+
+volumes:
+  temporal-data:

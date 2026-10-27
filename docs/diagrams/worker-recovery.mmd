@@ -1,0 +1,23 @@
+sequenceDiagram
+    autonumber
+    participant Client as Client / 官方 UI
+    participant Server as Temporal Server
+    participant Before as 停止前的 Worker
+    participant After as 重启后的 Worker
+
+    Before->>Server: 库存与付款已完成，等待确认
+    Note over Before: Worker 停止，内存中的 state 消失
+    Note over Server: History 与确认 Timer 仍保留
+    Client->>Server: 在确认期限内发送 approveOrder Signal
+    Server->>Server: 持久化 WorkflowExecutionSignaled
+    Server-->>Client: Signal 已接收
+    Note over Server: 等待可用 Worker 拉取任务
+    After->>Server: 轮询同 namespace / Task Queue
+    Server-->>After: 交付任务与执行历史
+    After->>After: 从入口确定性重放 orderWorkflow
+    Note over After: 库存、付款 await 使用历史结果，不重复调用已完成 Activity
+    After->>After: 重放到等待位置，处理已保存的 Signal
+    After->>Server: 取消 Timer，安排 shipOrder Activity
+    After->>Server: 执行发货 Activity 并报告结果
+    After->>Server: 提交 Workflow 完成
+    Server->>Server: 持久化 WorkflowExecutionCompleted

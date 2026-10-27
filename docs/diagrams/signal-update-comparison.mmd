@@ -1,0 +1,70 @@
+sequenceDiagram
+    autonumber
+    actor User as 使用者
+    participant Web as 学习页面
+    participant API as Node API / Temporal Client
+    participant Server as Temporal Server
+    participant Worker as Workflow Worker
+
+    alt 选择 Signal
+        User->>Web: 发送确认 Signal
+        Web->>API: POST /api/orders/:workflowId/approve
+        API->>Server: describe()，取得当前 Run ID
+        Server-->>API: RUNNING + Run ID
+        API->>Server: query(orderState)，固定到该 Run
+        Server->>Worker: 执行只读 Query handler
+        Worker-->>Server: waiting_approval
+        Server-->>API: 当前业务状态
+        API->>Server: signal(approveOrder)，固定到该 Run
+        Server->>Server: 持久化 WorkflowExecutionSignaled
+        par 返回收件回执（不等待 handler）
+            Server-->>API: Signal 已接收
+            API-->>Web: 200 status=sent
+        and Worker 可独立处理
+            Server->>Worker: Workflow Task 交付 Signal
+            Worker->>Worker: applyApproval("signal")
+        end
+        Note over Web,Worker: 收件回执不保证 handler 已处理<br/>也不保证打包、发货或 Workflow 完成
+    else 选择 Update
+        User->>Web: 发送确认 Update
+        Web->>API: POST approval-updates<br/>Run ID + Update ID + confirmed
+        API->>Server: executeUpdate(approveOrderUpdate)<br/>不以 Query 代替 validator
+        opt 部分服务端路径
+            Server->>Server: 持久化 UpdateAdmitted
+        end
+        Server->>Worker: Workflow Task 交付 Update 请求
+        Worker->>Worker: 执行同步 validator
+        alt confirmed 不为 true，或订单已不允许确认
+            Worker-->>Server: 报告 validator 拒绝
+            Note over Server: 通常不持久化<br/>UpdateAccepted / UpdateCompleted
+            Server-->>API: WorkflowUpdateFailedError
+            API-->>Web: 409 status=rejected
+        else validator 通过
+            Worker->>Worker: 同一 Workflow Task 内执行同步 handler<br/>再次校验并 applyApproval("update", updateId)
+            alt handler 门禁失败
+                Worker-->>Server: 报告 acceptance + failure outcome
+                Server->>Server: 持久化 UpdateAccepted<br/>与失败的 UpdateCompleted
+                Server-->>API: WorkflowUpdateFailedError
+                API-->>Web: 409 status=rejected
+            else handler 成功
+                Worker-->>Server: 报告 acceptance + success outcome
+                Server->>Server: 持久化 UpdateAccepted<br/>与成功的 UpdateCompleted
+                alt 在 HTTP 等待期内取得结果
+                    Server-->>API: Update result
+                    API-->>Web: 200 status=approved + 真实 JSON
+                else RPC 超时或传输结果不确定
+                    API-->>Web: 202 status=unknown
+                    alt 查询原 Update 结果
+                        Web->>API: GET 原 Run ID + Update ID
+                        API->>Server: getUpdateHandle(updateId).result()
+                    else 重试同一 Update 请求
+                        Web->>API: POST 原 Run ID + Update ID + confirmed
+                        API->>Server: executeUpdate(...原 ID 与参数)
+                    end
+                    Server-->>API: 已知原结果，或仍未找到 / 超时
+                    API-->>Web: 200 / 409 / 202
+                end
+            end
+        end
+        Note over Web,Worker: approved 只表示人工确认 handler 完成<br/>不表示打包、发货或 Workflow 已完成
+    end

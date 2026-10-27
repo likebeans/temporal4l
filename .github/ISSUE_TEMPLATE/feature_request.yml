@@ -1,0 +1,77 @@
+name: 功能建议
+description: 建议改进教学体验、代码、文档或开发流程
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢你的建议。中文和英文都可以。尚未成形、需要共同讨论的想法也可以先发到 [GitHub Discussions](https://github.com/likebeans/temporal4l/discussions)。
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: 要解决的问题
+      description: 请描述当前学习者或贡献者遇到的具体困难，而不只是期望增加的实现。
+      placeholder: 当我尝试……时，很难理解或完成……
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: 建议方案
+      description: 描述期望的行为、使用流程或内容变化。
+    validations:
+      required: true
+
+  - type: textarea
+    id: learning-value
+    attributes:
+      label: 学习价值与证据边界
+      description: 这个变化帮助理解哪个 Temporal 概念？运行时结论将由 Query、Describe、History、Pending Activity、账本或其他什么证据支持？
+      placeholder: 请同时说明不应从这些证据推断什么。
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 考虑过的替代方案
+      description: 可选。说明当前绕过方式、其他设计或为什么现有文档不足。
+
+  - type: dropdown
+    id: affected-area
+    attributes:
+      label: 主要影响范围
+      options:
+        - 学习路径或文档
+        - Workflow / Activity / Worker
+        - API 或运行证据
+        - Web 学习界面
+        - 测试与开发体验
+        - 独立练习
+        - 其他
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: 可验证的完成标准
+      description: 请列出维护者可以观察或测试的结果；避免只写“更好用”。
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: 提交前确认
+      options:
+        - label: 我搜索过现有 Issue 和 Discussion，没有找到相同建议。
+          required: true
+        - label: 我理解本项目是本地教学示例，不提供生产级保证。
+          required: true
+        - label: 这个建议不包含需要私密处理的安全漏洞细节。
+          required: true
