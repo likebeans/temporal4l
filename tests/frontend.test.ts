@@ -449,6 +449,14 @@ test('在线学习独立推演、切换重置且不会请求真实 API', async (
   const document = page.dom.window.document;
   assert.match(document.body.textContent!, /教学示意 · 非真实运行/);
   assert.match(document.body.textContent!, /没有运行 Temporal 后端/);
+  for (const [label, url] of [['真实演示', 'http://localhost:5173/'], ['Temporal UI', 'http://localhost:8233/namespaces/temporal-learning/workflows']]) {
+    const link = [...document.querySelectorAll<HTMLAnchorElement>('.study-topnav a')].find((item) => item.textContent === label);
+    assert.ok(link, `顶部应提供${label}入口`);
+    assert.equal(link.href, url);
+    assert.equal(link.target, '_blank');
+    assert.ok(link.relList.contains('noreferrer'));
+    assert.match(document.getElementById(link.getAttribute('aria-describedby')!)!.textContent!, /当前设备.*需先在电脑启动/);
+  }
   assert.match(document.querySelector('.study-reading-state')!.textContent!, /已标记读过 1 \/ 7/);
   assert.deepEqual(JSON.parse(page.dom.window.localStorage.getItem('temporal4l.read-chapters.v1')!), ['start', 'retired-chapter']);
   assert.equal((page.button('上一步') as HTMLButtonElement).disabled, true);
@@ -469,6 +477,13 @@ test('在线学习独立推演、切换重置且不会请求真实 API', async (
   assert.equal(document.querySelectorAll('.self-check-question').length, 10);
   assert.ok(document.querySelector('a[href="#view=setup&chapter=start"]'));
   assert.equal(document.querySelectorAll('.connection-pill, .order-builder').length, 0);
+  await act(async () => {
+    page.dom.window.history.pushState(null, '', '#view=setup&chapter=start');
+    page.dom.window.dispatchEvent(new page.dom.window.HashChangeEvent('hashchange'));
+  });
+  assert.equal(document.querySelector('.study-setup a[href="http://localhost:5173/"]')?.getAttribute('target'), '_blank');
+  assert.equal(document.querySelector('.study-setup a[href="http://localhost:8233/namespaces/temporal-learning/workflows"]')?.getAttribute('target'), '_blank');
+  assert.match(document.querySelector('.study-setup')!.textContent!, /手机上的 localhost 指手机自身/);
   await act(async () => {
     page.dom.window.history.replaceState(null, '', '/');
     page.dom.window.dispatchEvent(new page.dom.window.HashChangeEvent('hashchange'));
