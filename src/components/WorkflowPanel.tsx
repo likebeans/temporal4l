@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import {
   Activity,
   AlertTriangle,
+  ArrowRight,
   Ban,
   Check,
   Circle,
@@ -20,6 +21,8 @@ import {
 import type { ComponentType } from 'react';
 import type { ApprovalFeedback } from '../../shared/approval';
 import { ApprovalComparison } from './ApprovalComparison';
+import { WorkspaceTabs } from './WorkspaceTabs';
+
 import type {
   CompensationProgress,
   HealthResponse,
@@ -41,6 +44,13 @@ import {
   scenarioLabel,
   stepStatusLabel,
 } from '../format';
+
+const runViews = [
+  { id: 'steps', label: '流程步骤' },
+  { id: 'actions', label: '确认 / 取消' },
+  { id: 'effects', label: '心跳 / 账本' },
+] as const;
+type RunView = typeof runViews[number]['id'];
 
 interface WorkflowPanelProps {
   detail: OrderDetail | null;
@@ -157,7 +167,7 @@ function StatusOverview({ detail, queryStale, observationStale }: {
           <span aria-hidden="true" />
           {orderStatusLabel(detail.status)}
         </span>
-        <small><code>{detail.status}</code> · Temporal 对这次 Run 的执行状态</small>
+        <small><code>{detail.status}</code> · 本次 Run</small>
         {observationStale && <span className="freshness-label freshness-label--stale">上次响应</span>}
       </div>
       <p className="status-overview__time">
@@ -413,6 +423,9 @@ export function WorkflowPanel({
   const canCancel = servicesReady && !executionTerminal && Boolean(state && !isTerminalStatus(state.status)) && controlsFresh && actionPending === null;
   const temporalWorkflowUrl = detail ? buildTemporalWorkflowUrl(health, detail) : null;
   const actionAwaiting = actionPhase === 'awaiting';
+  const [view, setView] = useState<RunView>('steps');
+  useEffect(() => setView('steps'), [detail?.runId]);
+  const needsApproval = state?.status === 'waiting_approval' && !executionTerminal;
 
   return (
     <section className="panel workflow-panel" aria-labelledby="workflow-path-title" aria-busy={loading}>
@@ -476,7 +489,25 @@ export function WorkflowPanel({
         <>
           <StatusOverview detail={detail} queryStale={stale} observationStale={observationStale} />
 
-          <div className="workflow-meta">
+          <div className="run-workspace-nav">
+            {(needsApproval || approvalFeedback?.status === 'unknown') && view !== 'actions' && (
+              <div className="run-action-prompt">
+                <span>{approvalFeedback?.status === 'unknown' ? 'Update 结果未知，请核对原请求' : '正在等待你的人工确认'}</span>
+                <button type="button" onClick={() => {
+                  setView('actions');
+                  document.getElementById('run-view-tab-actions')?.focus();
+                }}>
+                  {approvalFeedback?.status === 'unknown' ? '查看恢复操作' : '前往确认'}
+                  <ArrowRight size={14} aria-hidden="true" />
+                </button>
+              </div>
+            )}
+            <WorkspaceTabs id="run-view" label="当前运行视图" items={runViews} value={view} onChange={setView} />
+          </div>
+
+          <div className="run-detail-pane" role="tabpanel" id="run-view-panel-steps" aria-labelledby="run-view-tab-steps" hidden={view !== 'steps'} tabIndex={0}>
+          <details className="workflow-meta">
+            <summary>{state ? `${state.input.customerName} · ${scenarioLabel(state.input.scenario)} · ${formatMoney(state.total)}` : '运行标识与 Query 状态'}<span>运行详情</span></summary>
             <div className="workflow-meta__identity">
               <code title={detail.workflowId}>{detail.workflowId}</code>
             </div>
@@ -493,7 +524,7 @@ export function WorkflowPanel({
                 {detail.stateError || 'Query 正在初始化；执行状态与独立观测数据仍可查看。'}
               </p>
             )}
-          </div>
+          </details>
 
           {state && (
             <ol className="workflow-steps" aria-label="订单工作流步骤">
@@ -502,17 +533,6 @@ export function WorkflowPanel({
               ))}
             </ol>
           )}
-
-          <div className="workflow-observability">
-            <PackingPanel detail={detail} queryStale={stale} observationStale={observationStale} />
-            {state?.compensationProgress && <CompensationPanel progress={state.compensationProgress} />}
-            <PaymentJournal
-              key={detail.runId}
-              detail={detail}
-              scenario={state?.input.scenario}
-              observationStale={observationStale}
-            />
-          </div>
 
           {state && (state.error || state.compensation || state.trackingNumber) && (
             <div className="outcome-notes">
@@ -537,6 +557,17 @@ export function WorkflowPanel({
             </div>
           )}
 
+          </div>
+
+          <div className="run-detail-pane" role="tabpanel" id="run-view-panel-effects" aria-labelledby="run-view-tab-effects" hidden={view !== 'effects'} tabIndex={0}>
+            <div className="workflow-observability">
+              <PackingPanel detail={detail} queryStale={stale} observationStale={observationStale} />
+              {state?.compensationProgress && <CompensationPanel progress={state.compensationProgress} />}
+              <PaymentJournal key={detail.runId} detail={detail} scenario={state?.input.scenario} observationStale={observationStale} />
+            </div>
+          </div>
+
+          <div className="run-detail-pane" role="tabpanel" id="run-view-panel-actions" aria-labelledby="run-view-tab-actions" hidden={view !== 'actions'} tabIndex={0}>
           {(state || approvalFeedback) && (
             <ApprovalComparison
               key={detail.runId}
@@ -563,6 +594,8 @@ export function WorkflowPanel({
               ) : null}
             </div>
           )}
+
+          </div>
 
           {actionError && (
             <p className="action-error" role="alert">

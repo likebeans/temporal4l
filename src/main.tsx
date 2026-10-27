@@ -2,6 +2,7 @@ import { lazy, StrictMode, Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
 import './styles.css';
 import './online.css';
+import './lab.css';
 
 const App = lazy(() => import.meta.env.MODE === 'pages'
   ? import('./components/OnlineLearning')

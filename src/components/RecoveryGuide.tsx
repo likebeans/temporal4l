@@ -11,6 +11,8 @@ import {
 } from '../recovery';
 
 interface RecoveryGuideProps {
+  expanded?: boolean;
+  active?: boolean;
   detail: OrderDetail | null;
   health: HealthResponse | null;
   servicesReady: boolean;
@@ -78,9 +80,9 @@ function Command({ label, command }: { label: string; command: string }) {
 
 export function RecoveryGuide({
   detail, health, servicesReady, queryFresh, responseFresh, createPending, createError,
-  actionPending, actionError, onCreate, onApprove, onSelect, onSessionChange,
+  actionPending, actionError, onCreate, onApprove, onSelect, onSessionChange, expanded = false, active = true,
 }: RecoveryGuideProps) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(expanded);
   const [mode, setMode] = useState<RecoveryMode>('approval');
   const [preparedWorkflowId, setPreparedWorkflowId] = useState<string | null>(null);
   const [session, setSession] = useState<RecoverySession | null>(null);
@@ -117,8 +119,8 @@ export function RecoveryGuide({
   }, [sessionActive, onSessionChange]);
 
   useEffect(() => {
-    if (session?.phase) stageHeadingRef.current?.focus({ preventScroll: true });
-  }, [session?.phase]);
+    if (session?.phase && active && open) stageHeadingRef.current?.focus({ preventScroll: true });
+  }, [session?.phase, active, open]);
 
   useEffect(() => {
     if (!detail || !responseFresh) return;

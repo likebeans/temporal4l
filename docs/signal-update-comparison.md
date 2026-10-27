@@ -15,7 +15,7 @@
 ## 1. 先在页面上做一次对照实验
 
 1. 按[项目 README](../README.md)启动 Temporal、API、Worker 和前端，创建一条普通订单。
-2. 等订单进入 `waiting_approval`，在工作流面板的“Signal / Update 对照”区域选择确认方式。新订单默认选中 **Signal**。
+2. 等订单进入 `waiting_approval`，点击“前往确认”或当前运行的“确认 / 取消”标签，在“Signal / Update 对照”区域选择确认方式。新订单默认选中 **Signal**。
 3. 若先体验 Signal，直接点击“发送确认 Signal”。页面显示 `status: sent` 的收件回执；随后观察 Query、`WorkflowExecutionSignaled`、发货 Activity 和 Workflow 终态。每条订单只能完成一次确认，比较 Update 时需创建新订单。
 4. 若体验 Update，选择 **Update**，先不勾选“我已核对订单信息，确认继续处理”，点击“发送 Update（校验拒绝实验）”。这会向 Workflow 发送一次真实 Update，而不是前端模拟错误；validator 返回 `ApprovalConfirmationRequired`，订单继续等待确认。
 5. 勾选复选框后再次发送。页面会为这次新请求生成新的 Update ID；成功时直接展示 handler 返回的真实 JSON。

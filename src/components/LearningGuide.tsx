@@ -3,6 +3,7 @@ import { Activity, ArrowDown, BookOpen, ChevronDown, RefreshCw, Server, Workflow
 interface LearningGuideProps {
   open: boolean;
   onToggle: () => void;
+  onNavigate?: (target: 'create-order-title' | 'learning-practice') => void;
 }
 
 const concepts = [
@@ -38,7 +39,7 @@ const stages = [
   {
     title: '停止 Worker，理解恢复',
     goal: '解释历史保存在哪里、变量如何重建，以及已完成的付款为何不因重放再次执行。',
-    action: '展开下方“Worker 恢复实验”，先按说明独立运行 Worker，再完成“等待确认时重启”。',
+    action: '进入“恢复实验”工作区，先按说明独立运行 Worker，再完成“等待确认时重启”。',
     evidence: '核对同一个 Run、Query 中断与恢复、停机期间 Signal 入库，以及付款次数保持不变。',
   },
   {
@@ -61,7 +62,7 @@ const stages = [
   },
 ];
 
-export function LearningGuide({ open, onToggle }: LearningGuideProps) {
+export function LearningGuide({ open, onToggle, onNavigate }: LearningGuideProps) {
   return (
     <section className="learning-guide" id="learning-guide" aria-labelledby="learning-guide-title">
       <div className="learning-guide__header">
@@ -122,11 +123,21 @@ export function LearningGuide({ open, onToggle }: LearningGuideProps) {
         </ol>
       </div>
 
-      <a className="learning-guide__start" href="#create-order-title">
+      <a className="learning-guide__start" href="#create-order-title" onClick={(event) => {
+        if (onNavigate) {
+          event.preventDefault();
+          onNavigate('create-order-title');
+        }
+      }}>
         <ArrowDown size={16} aria-hidden="true" />
         前往创建订单 · 第一课选择“正常处理”，使用默认 Signal 确认
       </a>
-      <a className="learning-guide__start" href="#learning-practice">
+      <a className="learning-guide__start" href="#learning-practice" onClick={(event) => {
+        if (onNavigate) {
+          event.preventDefault();
+          onNavigate('learning-practice');
+        }
+      }}>
         <BookOpen size={16} aria-hidden="true" />
         学完后：自测、记录证据与迁移练习
       </a>
