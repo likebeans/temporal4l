@@ -31,7 +31,7 @@ export function readStudyRoute(hash: string): StudyRoute {
 }
 
 export function headingSlug(text: string): string {
-  return text.toLowerCase().replace(/<[^>]+>/g, '').replace(/[^\p{L}\p{N}\s_-]/gu, '').trim().replace(/ /g, '-');
+  return text.toLowerCase().replace(/[^\p{L}\p{N}\s_-]/gu, '').trim().replace(/ /g, '-');
 }
 
 export function documentHeadings(markdown: string) {
