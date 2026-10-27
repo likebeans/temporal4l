@@ -1,6 +1,11 @@
 import { useId, useState } from 'react';
 import { BookOpenCheck, ChevronDown, Download, FilePenLine, FlaskConical } from 'lucide-react';
 import { EMPTY_EXPERIMENT_NOTE, SELF_CHECK_QUESTIONS, learningNotesMarkdown, type ExperimentNote } from '../learning-practice';
+import { isStringRecord, useLocalDraft } from '../use-local-draft';
+
+function isExperimentNote(value: unknown): value is ExperimentNote {
+  return isStringRecord(value) && Object.keys(EMPTY_EXPERIMENT_NOTE).every((key) => typeof value[key] === 'string');
+}
 
 const noteFields: { key: keyof ExperimentNote; label: string; hint: string; short?: boolean }[] = [
   { key: 'topic', label: '主题 / 场景', hint: '例如：支付幂等、等待时恢复或资料审核。', short: true },
@@ -14,10 +19,10 @@ const noteFields: { key: keyof ExperimentNote; label: string; hint: string; shor
   { key: 'limits', label: '缺失证据与结论边界', hint: '还缺哪些证据？什么仍未知？单次响应非原子，旧 Query 和 Workflow ID 账本分别有什么限制？' },
 ];
 
-export function LearningPractice() {
-  const [open, setOpen] = useState(false);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [note, setNote] = useState<ExperimentNote>({ ...EMPTY_EXPERIMENT_NOTE });
+export function LearningPractice({ expanded = false }: { expanded?: boolean }) {
+  const [open, setOpen] = useState(expanded);
+  const [answers, setAnswers, answersSaved] = useLocalDraft<Record<string, string>>('temporal4l.answers.v1', {}, isStringRecord);
+  const [note, setNote, noteSaved] = useLocalDraft<ExperimentNote>('temporal4l.experiment-note.v1', { ...EMPTY_EXPERIMENT_NOTE }, isExperimentNote);
   const [exportStatus, setExportStatus] = useState('');
   const baseId = useId();
 
@@ -61,7 +66,7 @@ export function LearningPractice() {
       <div id={`${baseId}-body`} className="learning-practice__body" hidden={!open}>
         <div className="practice-notice">
           <FilePenLine size={18} aria-hidden="true" />
-          <p>先作答，再展开参考要点自行核对。草稿仅保留在本次页面中，刷新或关闭会清空；离开前请导出。这里不自动读取运行证据，也不自动评分。</p>
+          <p>先作答，再展开参考要点自行核对。{answersSaved && noteSaved ? '草稿已保存在当前浏览器，刷新后可继续；不会跨设备同步，重要笔记请导出备份。' : '浏览器存储不可用，草稿仅保留在本次页面中；离开前请导出。'}这里不自动读取运行证据，也不自动评分。</p>
         </div>
 
         <section className="practice-section" aria-labelledby={`${baseId}-questions`}>
@@ -130,7 +135,7 @@ export function LearningPractice() {
           <details className="self-check-reference">
             <summary>准备好后查看参考实现入口</summary>
             <p>先保存自己的设计与运行记录，再打开 <code>exercises/01-transfer/01.01-document-review/solution/readme.md</code> 对照参考解释和实现。参考命令为 <code>npm run exercise:review:solution -- worker</code>，不能与题目 Worker 同时消费同一队列。</p>
-            <p>自动回归可运行 <code>npm run test:exercise</code>；它验证参考实现，不代表已经验证你修改的题目代码。自己的实现仍需按题目的 CLI 验收步骤记录证据。</p>
+            <p>运行 <code>DOCUMENT_REVIEW_TEST_VARIANT=problem npm run test:exercise</code> 可验证自己的实现；初始 TODO 版本应失败。默认 <code>npm run test:exercise</code> 验证参考实现。通过自动测试后，仍需按题目的 CLI 步骤记录真实恢复证据。</p>
           </details>
         </section>
       </div>

@@ -526,11 +526,11 @@ npm run dev:web
 
 等待确认恢复实验可以这样操作：
 
-1. 创建正常订单，等待人工确认，记下 Workflow ID 和 Run ID。
-2. 在 Worker 终端按 `Ctrl+C`，保持 Temporal、API 和前端运行。
+1. 按[恢复向导](worker-recovery-guide.md)创建正常订单，等待人工确认，保存同一 Workflow ID / Run ID 的基线。
+2. 在 Worker 终端按 `Ctrl+C`，保持 Temporal、API 和前端运行。先等向导记录 Query 中断和其后的 History 边界。
 3. 在确认期限内，通过官方 UI 发送无参数的 `approveOrder` Signal。页面的确认 API 依赖 Query，Worker 停止时它可能暂时不可用。
-4. 向导观察到 Query 中断与 Signal 入库后，重新运行 `npm run worker:recovery`。
-5. 观察同一个 Workflow ID / Run ID 继续发货并完成。也可以先恢复 Worker，再在学习页面确认。
+4. 向导观察到边界之后的 Signal 入库，再重新运行 `npm run worker:recovery`。
+5. 观察同一 Run 的后续 Workflow Task、发货、完成事件及账本。先恢复再确认也能展示编排继续，但不能证明停机期间收到了 Signal。
 
 若没有确认且超过等待期限，恢复后应观察超时补偿分支。只有 Temporal Server 和它的持久化数据仍在，恢复才有依据。
 

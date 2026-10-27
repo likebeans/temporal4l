@@ -31,8 +31,8 @@ const approveSignal = defineSignal(APPROVE_SIGNAL);
 const approveUpdate = defineUpdate<ApprovalUpdateResult, [ApprovalUpdateInput]>(APPROVE_UPDATE);
 
 const sharedActivityOptions = {
-  startToCloseTimeout: '10 seconds',
-  heartbeatTimeout: '5 seconds',
+  startToCloseTimeout: '10 seconds' as const,
+  heartbeatTimeout: '5 seconds' as const,
   cancellationType: 'WAIT_CANCELLATION_COMPLETED' as const,
   retry: {
     maximumAttempts: 3,

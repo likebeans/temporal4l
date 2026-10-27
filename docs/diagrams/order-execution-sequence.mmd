@@ -35,10 +35,14 @@ sequenceDiagram
 
     loop 页面读取状态，完成后约 1.5 秒再次请求
         Web->>API: GET /api/orders/:workflowId
-        API->>Server: describe、fetchHistory、query(orderState)
+        API->>Server: describe
+        Server-->>API: 执行状态与 Run ID
+        API->>Server: query(orderState)，绑定同一 Run
         Server->>WFT: 路由 Query 到 Worker
         WFT-->>Server: 只读返回 state
-        Server-->>API: 执行状态、History、业务状态
+        Server-->>API: 业务状态，或 Query 失败
+        API->>Server: fetchHistory（Query 结束后）
+        Server-->>API: History
         API-->>Web: OrderDetail
     end
 

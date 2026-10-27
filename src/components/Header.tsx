@@ -37,12 +37,15 @@ export function Header({ health, healthError, guideOpen, onToggleGuide }: Header
             <Waypoints size={21} strokeWidth={2} />
           </span>
           <span className="brand__copy">
-            <strong>Temporal Lab</strong>
-            <span>Durable workflow playground</span>
+            <strong>Temporal4L</strong>
+            <span>本地实验室 · Real workflow, real evidence</span>
           </span>
         </a>
 
         <div className="topbar__actions">
+          <a className="topbar-button" href="https://likebeans.github.io/temporal4l/" target="_blank" rel="noreferrer">
+            <BookOpen size={17} aria-hidden="true" />在线课程<ExternalLink size={14} aria-hidden="true" />
+          </a>
           <div className={`connection-pill connection-pill--${ready ? 'ready' : healthError ? 'error' : 'pending'}`}>
             <span className="connection-pill__dot" aria-hidden="true" />
             <Server size={15} aria-hidden="true" />
