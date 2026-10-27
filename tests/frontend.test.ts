@@ -437,8 +437,15 @@ test('在线学习独立推演、切换重置且不会请求真实 API', async (
   for (const method of ['getHealth', 'getOrders', 'getOrder', 'createOrder'] as const) {
     t.mock.method(api, method, async () => { requests += 1; throw new Error('在线学习不能调用真实 API'); });
   }
+  const skipLink = page.dom.window.document.createElement('a');
+  skipLink.className = 'skip-link';
+  skipLink.href = '#main-content';
+  page.dom.window.document.body.prepend(skipLink);
   const { default: OnlineLearning } = await import('../src/components/OnlineLearning');
   await act(async () => page.root.render(createElement(OnlineLearning)));
+  await page.click(skipLink);
+  assert.equal(page.dom.window.location.hash, '#view=walkthrough&chapter=start');
+  assert.equal(page.dom.window.document.activeElement?.id, 'main-content');
   const document = page.dom.window.document;
   assert.match(document.body.textContent!, /教学示意 · 非真实运行/);
   assert.match(document.body.textContent!, /没有运行 Temporal 后端/);
@@ -462,6 +469,12 @@ test('在线学习独立推演、切换重置且不会请求真实 API', async (
   assert.equal(document.querySelectorAll('.self-check-question').length, 10);
   assert.ok(document.querySelector('a[href="#view=setup&chapter=start"]'));
   assert.equal(document.querySelectorAll('.connection-pill, .order-builder').length, 0);
+  await act(async () => {
+    page.dom.window.history.replaceState(null, '', '/');
+    page.dom.window.dispatchEvent(new page.dom.window.HashChangeEvent('hashchange'));
+  });
+  assert.match(document.querySelector('h1')!.textContent!, /从这里开始/);
+  assert.equal(document.querySelector('.study-view-nav [aria-current]')?.textContent, '阅读课程');
   assert.equal(requests, 0);
 });
 

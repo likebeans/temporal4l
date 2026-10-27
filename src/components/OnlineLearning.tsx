@@ -33,18 +33,25 @@ export default function OnlineLearning() {
 
   useEffect(() => {
     const onHashChange = () => {
-      if (!window.location.hash.startsWith('#view=') && !['#walkthrough', '#online-source', '#learning-practice', '#local-lab'].includes(window.location.hash)) return;
+      if (window.location.hash === '#main-content') return;
       setRoute(readStudyRoute(window.location.hash));
       setMenuOpen(false);
       setSearch('');
     };
+    const skipLink = document.querySelector('.skip-link');
+    const skipNavigation = (event: Event) => {
+      event.preventDefault();
+      main.current?.focus({ preventScroll: true });
+      main.current?.scrollIntoView?.({ block: 'start' });
+    };
+    skipLink?.addEventListener('click', skipNavigation);
     window.addEventListener('hashchange', onHashChange);
     let disposed = false;
     void import('../course-documents').then(
       (module) => { if (!disposed) { setDocuments(module.courseDocuments); setAssets(module.courseAssets); } },
       () => { if (!disposed) setLoadError(true); },
     );
-    return () => { disposed = true; window.removeEventListener('hashchange', onHashChange); };
+    return () => { disposed = true; window.removeEventListener('hashchange', onHashChange); skipLink?.removeEventListener('click', skipNavigation); };
   }, []);
 
   useEffect(() => {
