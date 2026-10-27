@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { Context } from '@temporalio/activity';
 import { ApplicationFailure, CancelledFailure } from '@temporalio/common';
-import { isGrpcDeadlineError, WorkflowFailedError, type WorkflowHandle } from '@temporalio/client';
+import { isGrpcCancelledError, isGrpcDeadlineError, WorkflowFailedError, type WorkflowHandle } from '@temporalio/client';
 import { TestWorkflowEnvironment } from '@temporalio/testing';
 import { bundleWorkflowCode, Worker } from '@temporalio/worker';
 import { createDocumentReviewActivities } from '../exercises/01-transfer/01.01-document-review/support/activities';
@@ -272,13 +272,17 @@ test('资料审核：真实编排、SQLite 幂等、清理与同 Run Worker 恢�
       const handle = env.client.workflow.getHandle<typeof documentReviewWorkflow>(started.workflowId, started.firstExecutionRunId, {
         followRuns: false,
       });
-      const checkTimeout = (phase: string, expected: string) => (error: unknown) => {
+      const checkTimeout = (phase: string, expected: string, allowCancelled = false) => (error: unknown) => {
         assert.ok(error instanceof Error);
         assert.match(error.message, new RegExp(`${context.name}.*${phase}`));
-        assert.match(error.message, /超时/);
         assert.ok(error.message.includes(expected));
         assert.match(error.message, /最后已观察状态：未观察到/);
-        assert.ok(isGrpcDeadlineError(error), '必须是 SDK 真正结束的 RPC deadline');
+        const deadlineExceeded = isGrpcDeadlineError(error);
+        // 无消费者 Query 在截止边界也可能收到 CANCELLED，保留实际错误分类。
+        assert.ok(deadlineExceeded || (allowCancelled && isGrpcCancelledError(error)),
+          `必须是 SDK 已结束的截止或取消错误：${String(error.cause)}`);
+        assert.match(error.message, deadlineExceeded ? /超时/ : /RPC 失败/);
+        if (!allowCancelled) assert.match(error.message, /限时诊断 Query/);
         return true;
       };
       const began = Date.now();
@@ -286,8 +290,9 @@ test('资料审核：真实编排、SQLite 幂等、清理与同 Run Worker 恢�
         await assert.rejects(
           waitForState(env, handle, `${context.name} / 无消费者 Query`, 'waiting_review',
             (state) => state.status === 'waiting_review', 250),
-          checkTimeout('无消费者 Query', 'waiting_review'),
+          checkTimeout('无消费者 Query', 'waiting_review', true),
         );
+        assert.ok(Date.now() - began >= 200, '无消费者 Query 应等到接近 250ms 截止，不能提前失败');
         await assert.rejects(
           waitForResult(env, handle, `${context.name} / 无消费者结果`, 'completed', 250),
           checkTimeout('无消费者结果', 'completed'),

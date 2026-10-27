@@ -10,7 +10,7 @@ import { promisify } from 'node:util';
 const projectDirectory = fileURLToPath(new URL('../', import.meta.url));
 const execute = promisify(execFile);
 
-async function fixture(t: TestContext, apiPort?: string): Promise<string> {
+async function fixture(t: TestContext, apiPort?: string, mode = 'proxy-test'): Promise<string> {
   const directory = await mkdtemp(join(tmpdir(), 'temporal-vite-config-'));
   t.after(() => rm(directory, { recursive: true, force: true }));
   await mkdir(join(directory, 'server'));
@@ -30,12 +30,13 @@ import assert from 'node:assert/strict';
 import { Server } from 'node:net';
 import { resolveConfig } from 'vite';
 Server.prototype.listen = () => { throw new Error('解析 Vite 配置不应监听端口'); };
-const resolved = await resolveConfig({ root: process.cwd(), mode: 'proxy-test', logLevel: 'silent' }, 'serve');
+const resolved = await resolveConfig({ root: process.cwd(), mode: ${JSON.stringify(mode)}, logLevel: 'silent' }, 'serve');
 const proxy = resolved.server.proxy?.['/api'];
 assert.ok(proxy && typeof proxy === 'object');
 assert.equal(resolved.env.API_PORT, undefined);
 assert.equal(resolved.env.PROXY_TEST_SECRET, undefined);
 console.log(JSON.stringify({
+  base: resolved.base,
   target: proxy.target,
   changeOrigin: proxy.changeOrigin,
   host: resolved.server.host,
@@ -58,11 +59,12 @@ function childEnvironment(apiPort?: string): NodeJS.ProcessEnv {
 
 for (const scenario of [
   { name: 'Vite /api 代理默认使用 3001，忽略 Vite 特有环境文件', expectedPort: 3001 },
+  { name: 'Pages 构建使用仓库子路径，默认开发构建仍使用根路径', mode: 'pages', expectedPort: 3001 },
   { name: 'Vite /api 代理采用项目根 .env 的 API_PORT', rootPort: '4301', expectedPort: 4301 },
   { name: 'Vite /api 代理的显式 API_PORT 优先于根 .env', rootPort: '4301', explicitPort: '4302', expectedPort: 4302 },
 ]) {
   test(scenario.name, { timeout: 40_000 }, async (t) => {
-    const directory = await fixture(t, scenario.rootPort);
+    const directory = await fixture(t, scenario.rootPort, scenario.mode);
     // 全套测试会并发编译 Workflow，为独立子进程保留启动预算。
     const { stdout } = await execute(process.execPath, [join(directory, 'resolve-config.mjs')], {
       cwd: directory,
@@ -70,6 +72,7 @@ for (const scenario of [
       timeout: 35_000,
     });
     assert.deepEqual(JSON.parse(stdout), {
+      base: scenario.mode === 'pages' ? '/temporal4l/' : '/',
       target: `http://127.0.0.1:${scenario.expectedPort}`,
       changeOrigin: true,
       host: '127.0.0.1',

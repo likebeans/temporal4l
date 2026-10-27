@@ -2,6 +2,7 @@
 
 先按[项目 README](../README.md)选择原生或 Docker 方式，安装依赖并启动应用；已有服务运行时直接复用。再从[五阶段学习路径](learning-path.md)开始：①正常订单与角色分工 ②等待确认时停止重启 Worker ③重试、超时与幂等 ④取消、补偿与心跳 ⑤Signal / Update 深入对照。首课选择「正常处理」，使用默认 Signal，先观察 Query 与真实 History；下一课复用已有 Worker 恢复向导。
 
+- [在线学习与部署](github-pages.md)：GitHub Pages 学习入口、静态推演的范围、本地预览与发布步骤。
 - [五阶段学习路径](learning-path.md)：统一的初学入口，各阶段提供学习目标、可照走的操作、观察证据、相关文档和源码。完成后接入自测、实验记录和独立资料审核迁移练习。
 - [源码与运行证据导读](source-evidence-guide.md)：配套「深入观察 → 源码与证据」，按 API → Worker → Workflow → Activity 定位真实符号；逐题对照正常、恢复、重试、确认超时、幂等、取消与补偿、心跳、Signal、Update 的真实字段与解释边界。
 - [开发路线](development-roadmap.md)：三期目标、具体交付、依赖和可验证验收。第一期“学习入口与核心模型”、第二期“源码分层与运行证据对照”和第三期“自测与小型迁移练习”均已完成并验证。

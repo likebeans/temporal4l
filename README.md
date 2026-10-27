@@ -7,7 +7,7 @@
 
 **通过真实运行、故障实验和独立练习，学习 Temporal。**
 
-[学习路径](docs/learning-path.md) · [文档目录](docs/README.md) · [迁移练习](exercises/README.md) · [参与贡献](CONTRIBUTING.md) · [问题与讨论](https://github.com/likebeans/temporal4l/discussions)
+[在线学习](https://likebeans.github.io/temporal4l/) · [学习路径](docs/learning-path.md) · [文档目录](docs/README.md) · [迁移练习](exercises/README.md) · [参与贡献](CONTRIBUTING.md) · [问题与讨论](https://github.com/likebeans/temporal4l/discussions)
 
 一个可以在浏览器里操作的中文 Temporal 入门示例。通过「预留库存 → 收款 → 人工确认 → 可选分批打包 → 发货」这条订单流程，理解持久化执行、Activity 重试、Signal、Update、Query、Timer、幂等、心跳和补偿。
 
@@ -18,6 +18,14 @@
 ![Temporal Lab 学习界面：五阶段学习路线、连接状态与 Worker 恢复实验入口](docs/images/temporal-lab.png)
 
 > 上图为本地运行截图；实际订单与证据由你自己的 Temporal 实例产生。
+
+## 在线学习
+
+直接打开 **https://likebeans.github.io/temporal4l/**，无需安装依赖。在线版提供正常订单、Worker 恢复、响应丢失与幂等的逐步推演，九个主题的真实源码、自测与 Markdown 笔记导出，以及完整文档入口。
+
+GitHub Pages 只托管静态学习内容，**不会运行 Temporal、API 或 Worker**。推演明确标注为教学示意，不产生真实 History、运行结果或支付账本；停机恢复、故障注入和独立练习需按下文在本地验证。草稿仅在当前页面保留，关闭或刷新前请导出。
+
+维护与预览步骤见 [GitHub Pages 部署说明](docs/github-pages.md)。
 
 ## 快速启动
 
