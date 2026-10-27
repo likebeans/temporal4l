@@ -33,11 +33,25 @@ const setupViews = [
   { id: 'history', label: '最近实验' },
 ] as const;
 
-function workspaceForHash(hash: string): Workspace {
-  if (hash === '#recovery' || hash === '#recovery-title') return 'recovery';
-  if (hash === '#learning-guide') return 'guide';
-  if (hash === '#learning-practice') return 'notes';
-  return 'lab';
+interface WorkspaceNavigation {
+  workspace: Workspace;
+  mobileView?: MobileView;
+  setupView?: 'create' | 'history';
+  target: string;
+}
+
+function navigationForHash(hash: string): WorkspaceNavigation {
+  const target = hash.slice(1) || 'workspace-title';
+  if (['recovery', 'recovery-title'].includes(target)) return { workspace: 'recovery', target };
+  if (['learning-guide', 'learning-guide-title'].includes(target)) return { workspace: 'guide', target };
+  if (['learning-practice', 'learning-practice-title'].includes(target)) return { workspace: 'notes', target };
+  if (target === 'recent-orders-title') return { workspace: 'lab', mobileView: 'setup', setupView: 'history', target };
+  if (target === 'workflow-path-title') return { workspace: 'lab', mobileView: 'run', target };
+  if (target === 'inspector-title') return { workspace: 'lab', mobileView: 'inspect', target };
+  if (['create-order-title', 'customerName', 'productId', 'quantity', 'scenario', 'approvalTimeoutSeconds'].includes(target)) {
+    return { workspace: 'lab', mobileView: 'setup', setupView: 'create', target };
+  }
+  return { workspace: 'lab', target: target === 'page-title' ? 'workspace-title' : target };
 }
 
 const HEALTH_POLL_MS = 3_000;
@@ -96,28 +110,29 @@ export default function App() {
   const [actionStates, setActionStates] = useState<Record<string, ScopedActionState>>({});
   const [actionErrors, setActionErrors] = useState<Record<string, ScopedActionError>>({});
   const [approvalFeedback, setApprovalFeedback] = useState<Record<string, ApprovalFeedback>>({});
-  const [guideOpen, setGuideOpen] = useState(() => workspaceForHash(window.location.hash) === 'guide');
+  const [initialNavigation] = useState(() => navigationForHash(window.location.hash));
+  const [guideOpen, setGuideOpen] = useState(initialNavigation.workspace === 'guide');
   const [recoveryActive, setRecoveryActive] = useState(false);
-  const [workspace, setWorkspace] = useState<Workspace>(() => workspaceForHash(window.location.hash));
-  const [mobileView, setMobileView] = useState<MobileView>('setup');
-  const [setupView, setSetupView] = useState<'create' | 'history'>('create');
+  const [workspace, setWorkspace] = useState<Workspace>(initialNavigation.workspace);
+  const [mobileView, setMobileView] = useState<MobileView>(initialNavigation.mobileView ?? 'setup');
+  const [setupView, setSetupView] = useState<'create' | 'history'>(initialNavigation.setupView ?? 'create');
   const [evidenceExpanded, setEvidenceExpanded] = useState(false);
-  const [navigationTarget, setNavigationTarget] = useState<string | null>(null);
+  const [navigationTarget, setNavigationTarget] = useState<string | null>(
+    () => window.location.hash ? initialNavigation.target : null,
+  );
   const actionSequence = useRef(0);
 
   useEffect(() => {
     function navigate() {
       const hash = window.location.hash;
       if (hash === '#main-content') return;
-      const next = workspaceForHash(hash);
-      setWorkspace(next);
-      if (next === 'guide') setGuideOpen(true);
-      if (hash === '#create-order-title' || ['#customerName', '#quantity', '#approvalTimeoutSeconds'].includes(hash)) {
-        setSetupView('create');
-        setMobileView('setup');
-        setEvidenceExpanded(false);
-      }
-      setNavigationTarget(hash.slice(1) || 'workspace-title');
+      const next = navigationForHash(hash);
+      setWorkspace(next.workspace);
+      if (next.workspace === 'guide') setGuideOpen(true);
+      if (next.mobileView) setMobileView(next.mobileView);
+      if (next.setupView) setSetupView(next.setupView);
+      if (next.workspace === 'lab') setEvidenceExpanded(false);
+      setNavigationTarget(next.target);
     }
     window.addEventListener('hashchange', navigate);
     window.addEventListener('popstate', navigate);

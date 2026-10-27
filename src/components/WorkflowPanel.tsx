@@ -425,7 +425,7 @@ export function WorkflowPanel({
   const actionAwaiting = actionPhase === 'awaiting';
   const [view, setView] = useState<RunView>('steps');
   useEffect(() => setView('steps'), [detail?.runId]);
-  const needsApproval = state?.status === 'waiting_approval' && !executionTerminal;
+  const needsApproval = state?.status === 'waiting_approval' && !executionTerminal && controlsFresh;
 
   return (
     <section className="panel workflow-panel" aria-labelledby="workflow-path-title" aria-busy={loading}>

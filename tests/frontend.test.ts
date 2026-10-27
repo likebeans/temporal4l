@@ -120,6 +120,7 @@ async function assertStaleRefresh(t: test.TestContext, failure: 'http' | 'query'
   await page.click(page.button('校验拒绝实验')!);
   await page.tick(1_500);
   assert.ok(page.dom.window.document.body.textContent!.includes(warning), '刷新失败必须显示对应的旧快照提示');
+  assert.equal(page.button('前往确认'), undefined, '过期的等待确认快照不能显示当前操作提示');
   assert.equal(page.button('取消这条 Workflow'), undefined);
 
   await act(async () => update.reject(new ApiError('请先确认已核对订单信息', 409, { status: 'rejected' })));
@@ -132,6 +133,7 @@ async function assertStaleRefresh(t: test.TestContext, failure: 'http' | 'query'
   assert.equal(page.dom.window.document.body.textContent!.includes(warning), false);
   assert.equal(page.button('取消这条 Workflow')?.disabled, false);
   assert.equal(page.button('校验拒绝实验')?.disabled, false);
+  assert.ok(page.button('前往确认'), '新鲜的等待确认响应应恢复当前操作提示');
 }
 
 for (const failure of ['http', 'query'] as const) {
@@ -530,6 +532,38 @@ test('实验工作区切换保留表单与禁用存储时的草稿，支持标�
   assert.equal(customer.tabIndex, 0, '错误锚点聚焦输入后仍需保留正常 Tab 顺序');
   assert.equal(create.mock.calls.length, 0);
 });
+
+for (const [target, view] of [
+  ['recent-orders-title', 'setup'],
+  ['workflow-path-title', 'run'],
+  ['inspector-title', 'inspect'],
+] as const) {
+  test(`旧锚点 #${target} 首次进入及返回时显示并聚焦对应面板`, async (t) => {
+    const page = await browser(t);
+    page.dom.window.history.replaceState(null, '', `#${target}`);
+    t.mock.method(api, 'getHealth', async () => ({ temporal: true, worker: true, namespace: 'test', taskQueue: 'test', temporalUiUrl: 'http://localhost:8233' }));
+    t.mock.method(api, 'getOrders', async () => ({ orders: [] }));
+    const { default: App } = await import('../src/App');
+    await act(async () => page.root.render(createElement(App)));
+    const document = page.dom.window.document;
+    function assertTarget() {
+      assert.equal(document.getElementById('lab')!.hidden, false);
+      assert.equal(document.getElementById(`lab-mobile-panel-${view}`)!.dataset.mobileActive, 'true');
+      if (view === 'setup') assert.equal(document.getElementById('lab-setup-panel-history')!.hidden, false);
+      assert.equal(document.activeElement?.id, target);
+      assert.equal(document.getElementById('lab')!.classList.contains('is-evidence-expanded'), false);
+    }
+    assertTarget();
+    await page.click(document.getElementById('lab-setup-tab-create'));
+    await page.click(page.button('展开阅读')!);
+    await page.click(document.querySelector('.lab-navigation a[href="#learning-practice"]'));
+    await act(async () => {
+      page.dom.window.history.replaceState(null, '', `#${target}`);
+      page.dom.window.dispatchEvent(new page.dom.window.PopStateEvent('popstate'));
+    });
+    assertTarget();
+  });
+}
 
 test('恢复工作区隐藏后仍保留同 Run 基线并累计停机证据，不移动笔记焦点', async (t) => {
   const page = await browser(t);
