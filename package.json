@@ -64,7 +64,7 @@
   "devDependencies": {
     "@temporalio/testing": "1.24.0",
     "@types/jsdom": "21.1.7",
-    "@types/node": "^25.5.0",
+    "@types/node": "^26.6.5",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^6.0.0",
