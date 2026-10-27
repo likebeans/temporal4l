@@ -25,6 +25,8 @@
 
 GitHub Pages 只托管静态学习内容，**不会运行 Temporal、API 或 Worker**。推演明确标注为教学示意，不产生真实 History、运行结果或支付账本；停机恢复、故障注入和独立练习需按下文在本地验证。已读标记和手工笔记保存在当前浏览器，不上传、不跨设备同步，也不代表真实实验通过；存储不可用时仍可使用页面，重要笔记请导出备份。
 
+服务已启动时，可从在线页顶部的「真实演示」打开 [本地实验室](http://localhost:5173/)，从「Temporal UI」打开 [学习命名空间的工作流列表](http://localhost:8233/namespaces/temporal-learning/workflows)。「启动说明」提供完整准备步骤。这里的 localhost 指访问者当前设备，需在运行服务的电脑上使用；修改过端口时以终端显示的地址为准。
+
 维护与预览步骤见 [GitHub Pages 部署说明](docs/github-pages.md)。
 
 ## 快速启动

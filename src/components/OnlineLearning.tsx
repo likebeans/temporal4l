@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowDown, ArrowLeft, ArrowRight, BookOpen, Check, ChevronRight, Code2, ExternalLink, FilePenLine, List, Play, Search, Terminal, Waypoints, X } from 'lucide-react';
+import { ArrowDown, ArrowLeft, ArrowRight, BookOpen, Check, ChevronRight, Code2, ExternalLink, FilePenLine, GitBranch, List, Play, Search, Terminal, Waypoints, X } from 'lucide-react';
 import { CHAPTERS, documentHeadings, readStudyRoute, REPOSITORY, studyHref, type StudyView } from '../course';
 import type { CourseDocument } from '../course-documents';
 import { useLocalDraft } from '../use-local-draft';
@@ -14,6 +14,8 @@ const tools = [
   { id: 'notes', label: '自测与笔记', icon: FilePenLine },
 ] as const;
 const isReadChapters = (value: unknown): value is string[] => Array.isArray(value) && value.every((id) => typeof id === 'string');
+const LOCAL_LAB_URL = 'http://localhost:5173/';
+const LOCAL_TEMPORAL_UI_URL = 'http://localhost:8233/namespaces/temporal-learning/workflows';
 
 export default function OnlineLearning() {
   const [route, setRoute] = useState(() => readStudyRoute(window.location.hash));
@@ -73,9 +75,16 @@ export default function OnlineLearning() {
   return <div className="study-shell online-learning">
     <header className="study-header">
       <a className="brand" href={studyHref('read')} aria-label="Temporal4L 课程首页"><span className="brand__mark" aria-hidden="true"><Waypoints size={23} /></span><span className="brand__copy"><strong>Temporal4L<span className="brand-dot">.</span></strong><span>把持久化执行学明白</span></span></a>
-      <nav className="study-topnav" aria-label="站点导航"><a href={studyHref('read', chapter.id)} aria-current={route.view !== 'setup' ? 'page' : undefined}>学习中心</a><a href={studyHref('setup', chapter.id)} aria-current={route.view === 'setup' ? 'page' : undefined}><Terminal size={15} aria-hidden="true" />本地实验</a><a href={REPOSITORY} target="_blank" rel="noreferrer">GitHub<ExternalLink size={14} aria-hidden="true" /></a></nav>
+      <nav className="study-topnav" aria-label="站点导航">
+        <a href={studyHref('read', chapter.id)} aria-current={route.view !== 'setup' ? 'page' : undefined}>学习中心</a>
+        <a href={LOCAL_LAB_URL} target="_blank" rel="noreferrer" aria-describedby="local-service-note"><Play size={15} aria-hidden="true" />真实演示<ExternalLink size={14} aria-hidden="true" /></a>
+        <a href={LOCAL_TEMPORAL_UI_URL} target="_blank" rel="noreferrer" aria-describedby="local-service-note"><GitBranch size={15} aria-hidden="true" />Temporal UI<ExternalLink size={14} aria-hidden="true" /></a>
+        <a href={studyHref('setup', chapter.id)} aria-current={route.view === 'setup' ? 'page' : undefined}><Terminal size={15} aria-hidden="true" />启动说明</a>
+        <a href={REPOSITORY} target="_blank" rel="noreferrer">GitHub<ExternalLink size={14} aria-hidden="true" /></a>
+      </nav>
       <button className="study-menu-button" type="button" aria-expanded={menuOpen} aria-controls="study-sidebar" onClick={() => setMenuOpen((open) => !open)}>{menuOpen ? <X size={19} aria-hidden="true" /> : <List size={19} aria-hidden="true" />}课程目录</button>
     </header>
+    <div className="study-service-note" id="local-service-note"><Terminal size={16} aria-hidden="true" /><p>真实演示与 Temporal UI 打开<strong>当前设备</strong>上的服务，需先在电脑启动。<a href={studyHref('setup', chapter.id)}>打不开？查看启动说明<ArrowRight size={14} aria-hidden="true" /></a></p></div>
     <div className="study-layout">
       <aside className={`study-sidebar${menuOpen ? ' is-open' : ''}`} id="study-sidebar">
         <div className="study-sidebar-intro"><span className="study-overline">THE TEMPORAL FIELD GUIDE</span><h2>从理解到亲手实现</h2><p>循序阅读 · 随时动手 · 留下证据</p></div>
@@ -85,7 +94,7 @@ export default function OnlineLearning() {
           return items.length ? <div className="study-nav-group" key={group}><h3>{group}</h3>{items.map((item) => <a href={chapterLink(item.id)} key={item.id} aria-current={route.view === 'read' && item.id === chapter.id ? 'page' : undefined}><span className={`study-chapter-number${readChapters.includes(item.id) ? ' is-read' : ''}`}>{readChapters.includes(item.id) ? <Check size={14} aria-label="已标记读过" /> : String(CHAPTERS.indexOf(item) + 1).padStart(2, '0')}</span><span><strong>{item.title}</strong><small>{item.subtitle}</small></span><ChevronRight size={14} aria-hidden="true" /></a>)}</div> : null;
         })}{matches.length === 0 && <p className="study-empty" role="status">没有找到匹配章节，试试“重试”或“Signal”。</p>}</nav>
         <div className="study-reading-state"><BookOpen size={16} aria-hidden="true" /><p><strong>已标记读过 {CHAPTERS.filter((item) => readChapters.includes(item.id)).length} / {CHAPTERS.length} 章</strong><span>{saved ? '保存在此浏览器 · 不代表实验通过' : '浏览器保存不可用 · 本次页面有效'}</span></p></div>
-        <a className="study-lab-link" href={studyHref('setup', chapter.id)}><Terminal size={18} aria-hidden="true" /><span><strong>准备好动手了吗？</strong><small>启动本地 Temporal 实验</small></span><ArrowRight size={16} aria-hidden="true" /></a>
+        <a className="study-lab-link" href={LOCAL_LAB_URL} target="_blank" rel="noreferrer" aria-describedby="local-service-note"><Play size={18} aria-hidden="true" /><span><strong>打开真实演示</strong><small>本机 :5173 · 创建订单与查看 History</small></span><ExternalLink size={16} aria-hidden="true" /></a>
       </aside>
       <main className="study-main" id="main-content" tabIndex={-1} ref={main}>
         <div className="study-breadcrumb"><span>学习中心</span><ChevronRight size={13} aria-hidden="true" /><span>{route.view === 'setup' ? '本地实验准备' : chapter.group}</span><span className="study-edition">开源 · 中文 · 实践导向</span></div>
@@ -105,7 +114,17 @@ export default function OnlineLearning() {
         {route.view === 'walkthrough' && <WalkthroughTool key={chapter.id} chapter={chapter.id} />}
         {route.view === 'source' && <SourceTool key={chapter.id} initialTopic={chapter.topic} chapter={chapter.id} />}
         {route.view === 'notes' && <LearningPractice expanded />}
-        {route.view === 'setup' && <section className="study-setup"><span className="study-overline">FROM READING TO RUNNING</span><h1>让学习，真正运行起来。</h1><p className="study-description">在线课程帮助你理解；本地环境给你真实的执行、历史和故障证据。</p><div className="study-setup-cards"><div><BookOpen size={22} aria-hidden="true" /><h2>浏览器里的学习中心</h2><p>课程阅读、机制推演、源码、自测与笔记。不需要安装，也不运行 Temporal 后端。</p></div><div><Terminal size={22} aria-hidden="true" /><h2>电脑上的实验室</h2><p>Node 22.13+，推荐 Node 24 LTS。按下方说明启动服务，亲手操作真实工作流。</p></div></div><a className="study-text-link" href={studyHref('setup', chapter.id, '快速启动')}>跳到启动步骤<ArrowDown size={15} aria-hidden="true" /></a>{documents ? <CourseReader documents={selectedDocuments} assets={assets} route={route} /> : <p role="status">{loadError ? '安装文档加载失败，请从 GitHub 查看 README。' : '正在加载安装文档…'}</p>}</section>}
+        {route.view === 'setup' && <section className="study-setup">
+          <span className="study-overline">FROM READING TO RUNNING</span><h1>让学习，真正运行起来。</h1>
+          <p className="study-description">创建真实订单、发送 Signal / Update、观察重试与补偿，再到 Temporal UI 核对同一次运行的 History。服务已启动时，直接从下面进入。</p>
+          <div className="study-setup-cards">
+            <div><Play size={22} aria-hidden="true" /><h2>真实订单演示</h2><p>在本地实验室操作订单、故障场景、账本与 Worker 恢复向导。</p><a className="study-button study-button--primary" href={LOCAL_LAB_URL} target="_blank" rel="noreferrer" aria-describedby="local-service-note">打开真实演示<ExternalLink size={15} aria-hidden="true" /></a><small>{LOCAL_LAB_URL}</small></div>
+            <div><GitBranch size={22} aria-hidden="true" /><h2>Temporal UI</h2><p>直接进入 temporal-learning 命名空间，查看真实 Workflow、事件详情与运行状态。</p><a className="study-button" href={LOCAL_TEMPORAL_UI_URL} target="_blank" rel="noreferrer" aria-describedby="local-service-note">打开 Temporal UI<ExternalLink size={15} aria-hidden="true" /></a><small>{LOCAL_TEMPORAL_UI_URL}</small></div>
+          </div>
+          <p className="study-description">首次使用请在电脑上按下方说明启动服务。手机上的 localhost 指手机自身，请在运行服务的电脑上打开演示。按钮使用默认开发地址；修改过端口或使用构建后的应用时，以启动终端显示的地址为准，实验室顶部的 Temporal UI 链接会使用 API 配置。</p>
+          <a className="study-text-link" href={studyHref('setup', chapter.id, '快速启动')}>跳到启动步骤<ArrowDown size={15} aria-hidden="true" /></a>
+          {documents ? <CourseReader documents={selectedDocuments} assets={assets} route={route} /> : <p role="status">{loadError ? '安装文档加载失败，请从 GitHub 查看 README。' : '正在加载安装文档…'}</p>}
+        </section>}
         <footer className="study-footer"><span><strong>Temporal4L</strong> · 社区学习项目 · MIT</span><span>理解机制，尊重证据。</span></footer>
       </main>
     </div>
