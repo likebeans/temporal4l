@@ -1,7 +1,11 @@
-import { StrictMode } from 'react';
+import { lazy, StrictMode, Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
-import App from './App';
 import './styles.css';
+import './online.css';
+
+const App = lazy(() => import.meta.env.MODE === 'pages'
+  ? import('./components/OnlineLearning')
+  : import('./App'));
 
 const root = document.getElementById('root');
 
@@ -11,6 +15,8 @@ if (!root) {
 
 createRoot(root).render(
   <StrictMode>
-    <App />
+    <Suspense fallback={<p className="page-shell" role="status">正在加载 Temporal 学习内容…</p>}>
+      <App />
+    </Suspense>
   </StrictMode>,
 );

@@ -404,6 +404,35 @@ test('源码证据接收 App 的新鲜度状态，整次详情失败时 History 
   assert.match(document.querySelector('.event-view .inspector-stale')!.textContent!, /上次响应/);
 });
 
+test('在线学习独立推演、切换重置且不会请求真实 API', async (t) => {
+  const page = await browser(t);
+  let requests = 0;
+  for (const method of ['getHealth', 'getOrders', 'getOrder', 'createOrder'] as const) {
+    t.mock.method(api, method, async () => { requests += 1; throw new Error('在线学习不能调用真实 API'); });
+  }
+  const { default: OnlineLearning } = await import('../src/components/OnlineLearning');
+  await act(async () => page.root.render(createElement(OnlineLearning)));
+  const document = page.dom.window.document;
+  assert.match(document.body.textContent!, /教学示意 · 非真实运行/);
+  assert.match(document.body.textContent!, /没有运行 Temporal 后端/);
+  assert.equal((page.button('上一步') as HTMLButtonElement).disabled, true);
+  await page.click(page.button('下一步')!);
+  assert.match(document.querySelector('.online-step-detail h3')!.textContent!, /Activity/);
+  await page.click(document.querySelector('input[value="recovery"]'));
+  assert.equal((page.button('上一步') as HTMLButtonElement).disabled, true);
+  assert.match(document.querySelector('.online-step-detail h3')!.textContent!, /保存基线/);
+  const steps = document.querySelectorAll('.online-steps button');
+  await page.click(steps[steps.length - 1]);
+  assert.equal((page.button('下一步') as HTMLButtonElement).disabled, true);
+  await page.click(page.button('重新推演')!);
+  assert.equal(document.querySelector('[aria-current="step"]')?.textContent, '01先保存基线');
+  await page.click(page.button('展开自测与练习')!);
+  assert.equal(document.querySelectorAll('.self-check-question').length, 10);
+  assert.ok(document.querySelector('a[href="#local-lab"]'));
+  assert.equal(document.querySelectorAll('.connection-pill, .order-builder').length, 0);
+  assert.equal(requests, 0);
+});
+
 test('Temporal 超时执行的文案、色调和终态保持一致', () => {
   for (const status of ['TIMED_OUT', 'timed-out', 'Timed Out', 'timedout']) {
     assert.equal(orderStatusLabel(status), '已超时');
