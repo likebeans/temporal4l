@@ -39,7 +39,7 @@
     "test:exercise": "tsx --test tests/document-review*.test.ts"
   },
   "dependencies": {
-    "@fastify/static": "10.1.6",
+    "@fastify/static": "10.1.7",
     "@temporalio/activity": "1.24.0",
     "@temporalio/client": "1.24.0",
     "@temporalio/common": "1.24.0",
@@ -47,7 +47,7 @@
     "@temporalio/worker": "1.24.0",
     "@temporalio/workflow": "1.24.0",
     "fastify": "5.12.7",
-    "lucide-react": "1.60.0",
+    "lucide-react": "1.61.0",
     "react": "19.3.1",
     "react-dom": "19.3.1"
   },
@@ -58,10 +58,10 @@
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "^6.0.0",
-    "concurrently": "^9.2.1",
+    "concurrently": "^10.0.6",
     "jsdom": "26.1.0",
     "tsx": "^4.21.0",
     "typescript": "7.0.2",
-    "vite": "8.3.4"
+    "vite": "8.3.5"
   }
 }
