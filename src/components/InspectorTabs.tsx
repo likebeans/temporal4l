@@ -1,6 +1,6 @@
 import { useEffect, useId, useState } from 'react';
 import type { KeyboardEvent } from 'react';
-import { Activity, Braces, CircleDot, Clock3, Code2, Info, ListTree, MessageSquareMore, MessageSquareReply, Timer, Workflow } from 'lucide-react';
+import { Activity, Braces, CircleDot, Clock3, Code2, Info, ListTree, Maximize2, MessageSquareMore, MessageSquareReply, Minimize2, Timer, Workflow } from 'lucide-react';
 import type { ComponentType } from 'react';
 import type { HistoryEvent, OrderDetail } from '../../shared/types';
 import type { ApprovalFeedback } from '../../shared/approval';
@@ -10,6 +10,8 @@ import { SourceEvidencePanel } from './SourceEvidencePanel';
 type TabId = 'state' | 'history' | 'evidence' | 'code';
 
 interface InspectorTabsProps {
+  expanded?: boolean;
+  onToggleExpanded?: () => void;
   detail: OrderDetail | null;
   queryFresh?: boolean;
   responseFresh?: boolean;
@@ -96,7 +98,7 @@ if (input.scenario === 'heartbeat' || input.scenario === 'heartbeat_timeout') {
 }
 state.trackingNumber = await shipOrder(activityArgs)`;
 
-export function InspectorTabs({ detail, queryFresh = false, responseFresh = false, feedback }: InspectorTabsProps) {
+export function InspectorTabs({ detail, queryFresh = false, responseFresh = false, feedback, expanded = false, onToggleExpanded }: InspectorTabsProps) {
   const [activeTab, setActiveTab] = useState<TabId>('state');
   const [historyTarget, setHistoryTarget] = useState<{ workflowId: string; runId: string; eventId: string } | null>(null);
   const baseId = useId();
@@ -136,7 +138,15 @@ export function InspectorTabs({ detail, queryFresh = false, responseFresh = fals
           <p className="panel__kicker">Inspect what happened</p>
           <h2 id="inspector-title">深入观察</h2>
         </div>
-        {detail && <code className="run-id" title={detail.runId}>run · {detail.runId.slice(0, 8)}</code>}
+        <div className="inspector__tools">
+          {detail && <code className="run-id" title={detail.runId}>run · {detail.runId.slice(0, 8)}</code>}
+          {onToggleExpanded && (
+            <button type="button" className="inspector-expand" aria-pressed={expanded} onClick={onToggleExpanded}>
+              {expanded ? <Minimize2 size={15} aria-hidden="true" /> : <Maximize2 size={15} aria-hidden="true" />}
+              {expanded ? '返回并排' : '展开阅读'}
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="tab-list" role="tablist" aria-label="工作流观察视图" onKeyDown={handleKeyDown}>

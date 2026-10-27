@@ -2,7 +2,7 @@
 
 这组实验接在[订单执行流程](temporal-execution-flow.md)之后，重点观察三个边界：业务状态与执行状态的差异、Activity 重试与实际扣款的差异，以及 Activity 心跳如何支持取消和检查点恢复。
 
-启动方式见[项目 README](../README.md)。新增场景与原来的正常、重试、失败、超时场景共用同一个 `orderWorkflow`、Namespace 和 Task Queue。
+启动方式见[项目 README](../README.md)。新增场景与原来的正常、重试、失败、超时场景共用同一个 `orderWorkflow`、Namespace 和 Task Queue。本地「实验台」的当前运行面板用「确认 / 取消」操作订单，用「心跳 / 账本」查看检查点、补偿与支付流水；小屏先切「当前运行」。手工停止 Worker 的向导从顶部「恢复实验」进入。
 
 ## 1. 先认识页面上的数据来源
 

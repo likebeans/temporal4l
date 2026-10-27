@@ -15,7 +15,7 @@
 
 第一次学习请按[五阶段学习路径](docs/learning-path.md)：正常订单与角色分工 → 等待确认时停止重启 Worker → 重试、超时与幂等 → 取消、补偿与心跳 → Signal / Update 深入对照。先理解一条订单如何推进、历史如何支持恢复，再逐步加入故障实验。[开发路线](docs/development-roadmap.md)记录三期交付和验收：第一期“学习入口与核心模型”、第二期“源码分层与运行证据对照”、第三期“自测与小型迁移练习”均已完成并验证。运行后配合[源码与运行证据导读](docs/source-evidence-guide.md)，从真实符号解释当前观察。
 
-![Temporal Lab 学习界面：五阶段学习路线、连接状态与 Worker 恢复实验入口](docs/images/temporal-lab.png)
+![Temporal Lab 实验台：创建订单、当前运行与真实证据三栏并排](docs/images/temporal-lab.png)
 
 > 上图为本地运行截图；实际订单与证据由你自己的 Temporal 实例产生。
 
@@ -80,11 +80,21 @@ npm run dev
 
 原生模式将数据保存在项目 `.temporal/learning.db`，Docker 模式保存在 Docker 卷中；两种模式的历史互相独立。停止原生模式时，在终端 A 按 `Ctrl+C`。原生模式只需要 Node 和 npm。
 
+## 本地学习工作区
+
+顶部可切换「实验台」「恢复实验」「学习路线」「自测笔记」。桌面实验台并排显示三栏，长内容在各栏内滚动；小屏幕用「创建 / 最近」「当前运行」「运行证据」切换。
+
+- **创建 / 最近实验**：填写订单、选择实验情景，或回看已有运行。
+- **当前运行**：「流程步骤」查看业务进度；「确认 / 取消」发送 Signal、Update 或取消请求；「心跳 / 账本」核对检查点、补偿和支付效果。等待人工确认时会显示「前往确认」。
+- **运行证据**：查看状态 JSON、事件历史、源码与证据。桌面可「展开阅读」长源码，再「返回并排」。
+
+切换工作区保留当前表单、确认方式、笔记和恢复基线，恢复向导继续观察。刷新页面会清空恢复向导的临时记录；笔记会尝试保存在当前浏览器，重要记录请导出。顶部保留在线课程与 Temporal UI 入口，当前运行也可直达对应 Run。
+
 ## 五分钟体验
 
-1. 在左侧填写姓名、商品和数量，选择「正常处理」，保留初始 120 秒确认等待时间，启动订单。创建成功只表示 Workflow 已启动，业务步骤由 Worker 继续执行。
-2. 等库存、付款完成，页面进入「等待人工确认」。在「深入观察 → 状态 JSON」中查看 `orderState` Query 返回的 `status: waiting_approval`，同时留意主面板的 Temporal 执行状态仍为 `RUNNING`。
-3. 保持默认 **Signal**，点击「发送确认 Signal」，发送 `approveOrder`。返回的 `status: sent` 表示 Temporal Server 已收件；它不等待 handler，也不能用回执与 handler 的先后判断订单是否完成。
+1. 在「实验台 → 创建订单」填写姓名、商品和数量，选择「正常处理」，保留初始 120 秒确认等待时间，启动订单。创建成功只表示 Workflow 已启动，业务步骤由 Worker 继续执行。
+2. 等库存、付款完成，页面进入「等待人工确认」。在运行证据栏的「深入观察 → 状态 JSON」中查看 `orderState` Query 返回的 `status: waiting_approval`，同时留意主面板的 Temporal 执行状态仍为 `RUNNING`。
+3. 点击「前往确认」或「确认 / 取消」，保持默认 **Signal**，点击「发送确认 Signal」，发送 `approveOrder`。返回的 `status: sent` 表示 Temporal Server 已收件；它不等待 handler，也不能用回执与 handler 的先后判断订单是否完成。
 4. 继续观察发货单创建、业务状态 `completed`，以及 Temporal 最终状态 `COMPLETED`。这些才是订单完成的证据。
 5. 打开「事件历史」，按事件顺序及显示的 `#ID` 回看三段证据：库存 `reserveInventory` 和付款 `chargePayment` 的成功结果；等待确认的 `TimerStarted`、确认消息 `WorkflowExecutionSignaled` 和正常确认后的 `TimerCanceled`；发货 `shipOrder` 成功与 `WorkflowExecutionCompleted`。需要完整属性或结果 Payload 时，打开官方 Temporal UI 查看同一个 Run 的 History。
 
@@ -141,7 +151,7 @@ Temporal Server 保存历史和调度任务。**Worker 负责执行你的业务�
 
 ## 体验 Worker 重启后恢复
 
-这是学习路径的第二阶段，先做“等待确认时重启”；打包崩溃实验留到第四阶段。展开页面上的“Worker 恢复实验”，按四步向导保存基线、停止 Worker、观察停机窗口，再重启并核对真实结果。完整准备条件、停机步骤和判断边界以[Worker 恢复实验向导](docs/worker-recovery-guide.md)为准。
+这是学习路径的第二阶段，先做“等待确认时重启”；打包崩溃实验留到第四阶段。从顶部进入“恢复实验”工作区，按四步向导保存基线、停止 Worker、观察停机窗口，再重启并核对真实结果。完整准备条件、停机步骤和判断边界以[Worker 恢复实验向导](docs/worker-recovery-guide.md)为准。
 
 先保持 Temporal 运行，API、Worker、前端分别放在独立终端；若此前使用 `npm run dev`，先停止它，避免重复启动：
 
@@ -179,7 +189,7 @@ npm run dev:web
 
 ## 自测与独立练习
 
-完成五阶段后，展开页面底部「自测与迁移练习」：先回答 10 个开放题，再展开参考要点核对；手工填写预测、操作与真实运行证据，最后导出 Markdown。作答和手工笔记会尝试自动保存到当前浏览器，刷新后可继续；存储不可用时提示导出。页面不自动评分，已读标记不代表实验通过。离线入口为[自测文档](docs/self-check.md)和[实验记录模板](docs/experiment-record-template.md)。
+完成五阶段后，从顶部进入「自测笔记」工作区的「自测与迁移练习」：先回答 10 个开放题，再展开参考要点核对；手工填写预测、操作与真实运行证据，最后导出 Markdown。作答和手工笔记会尝试自动保存到当前浏览器，刷新后可继续；存储不可用时提示导出。页面不自动评分，已读标记不代表实验通过。离线入口为[自测文档](docs/self-check.md)和[实验记录模板](docs/experiment-record-template.md)。
 
 [资料审核迁移练习](exercises/01-transfer/01.01-document-review/problem/readme.md)提供独立题目与参考实现。先在 `problem/workflow.ts` 自行实现准备资料 → Signal / 超时等待 → 归档或清理，再用 CLI 核对正常完成、等待时恢复、响应丢失后的幂等，以及超时 / 取消清理。练习使用专用 Task Queue `temporal-learning-document-review` 与独立 `.data/document-review.db`，不会进入订单列表；无需停止当前订单服务。切换题目和参考 Worker 前须按题目说明结束练习中的 Run，并停止对应练习 Worker。
 

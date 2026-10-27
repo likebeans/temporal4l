@@ -6,6 +6,7 @@ import type { OrderInput, ProductId, Scenario } from '../../shared/types';
 import { formatMoney } from '../format';
 
 interface OrderFormProps {
+  compact?: boolean;
   connected: boolean;
   pending: boolean;
   requestError: string | null;
@@ -26,7 +27,7 @@ const initialInput: OrderInput = {
   approvalTimeoutSeconds: 120,
 };
 
-export function OrderForm({ connected, pending, requestError, onSubmit }: OrderFormProps) {
+export function OrderForm({ compact = false, connected, pending, requestError, onSubmit }: OrderFormProps) {
   const [input, setInput] = useState<OrderInput>(initialInput);
   const [errors, setErrors] = useState<FormErrors>({});
   const errorSummaryRef = useRef<HTMLDivElement>(null);
@@ -189,7 +190,21 @@ export function OrderForm({ connected, pending, requestError, onSubmit }: OrderF
           </div>
         </div>
 
-        <fieldset className="scenario-fieldset">
+        {compact ? <div className="field">
+          <label htmlFor="scenario">选择实验情景</label>
+          <div className="select-wrap">
+            <select
+              id="scenario"
+              name="scenario"
+              value={input.scenario}
+              onChange={(event) => selectScenario(event.target.value as Scenario)}
+              aria-describedby="scenario-description"
+            >
+              {SCENARIOS.map((scenario) => <option key={scenario.id} value={scenario.id}>{scenario.label}</option>)}
+            </select>
+          </div>
+          <p className="field__hint" id="scenario-description">{SCENARIOS.find((scenario) => scenario.id === input.scenario)?.description}</p>
+        </div> : <fieldset className="scenario-fieldset">
           <legend>选择实验情景</legend>
           <div className="scenario-list">
             {SCENARIOS.map((scenario) => (
@@ -209,7 +224,7 @@ export function OrderForm({ connected, pending, requestError, onSubmit }: OrderF
               </label>
             ))}
           </div>
-        </fieldset>
+        </fieldset>}
 
         <div className="field">
           <label htmlFor="approvalTimeoutSeconds">人工确认等待时间</label>
