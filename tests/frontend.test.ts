@@ -267,6 +267,31 @@ test('自测先作答再展开参考，折叠保持草稿并导出手工记录�
   assert.equal(create.mock.calls.length, 0);
 });
 
+test('自测草稿重挂载可恢复，损坏或禁用存储不阻止编辑与导出', async (t) => {
+  const page = await browser(t);
+  const { LearningPractice } = await import('../src/components/LearningPractice');
+  page.dom.window.localStorage.setItem('temporal4l.answers.v1', JSON.stringify({ roles: '保留下来的预测' }));
+  page.dom.window.localStorage.setItem('temporal4l.experiment-note.v1', 'broken-json');
+  await act(async () => page.root.render(createElement(LearningPractice, { expanded: true })));
+  let answer = page.dom.window.document.querySelector<HTMLTextAreaElement>('[id$="-answer-roles"]')!;
+  assert.equal(answer.value, '保留下来的预测');
+  const setter = Object.getOwnPropertyDescriptor(page.dom.window.HTMLTextAreaElement.prototype, 'value')!.set!;
+  await act(async () => {
+    setter.call(answer, '更新后的解释');
+    answer.dispatchEvent(new page.dom.window.Event('input', { bubbles: true }));
+  });
+  await act(async () => page.root.render(null));
+  await act(async () => page.root.render(createElement(LearningPractice, { expanded: true })));
+  answer = page.dom.window.document.querySelector<HTMLTextAreaElement>('[id$="-answer-roles"]')!;
+  assert.equal(answer.value, '更新后的解释');
+  await act(async () => page.root.render(null));
+  t.mock.method(page.dom.window.Storage.prototype, 'getItem', () => { throw new Error('blocked'); });
+  t.mock.method(page.dom.window.Storage.prototype, 'setItem', () => { throw new Error('blocked'); });
+  await act(async () => page.root.render(createElement(LearningPractice, { expanded: true })));
+  assert.match(page.dom.window.document.body.textContent!, /浏览器存储不可用/);
+  assert.ok(page.button('导出作答与实验记录'));
+});
+
 test('浏览器无法导出时明确保留草稿供复制，不显示保存成功', async (t) => {
   const page = await browser(t);
   const { LearningPractice } = await import('../src/components/LearningPractice');
@@ -406,6 +431,8 @@ test('源码证据接收 App 的新鲜度状态，整次详情失败时 History 
 
 test('在线学习独立推演、切换重置且不会请求真实 API', async (t) => {
   const page = await browser(t);
+  page.dom.window.history.replaceState(null, '', '#view=walkthrough&chapter=start');
+  page.dom.window.localStorage.setItem('temporal4l.read-chapters.v1', JSON.stringify(['start', 'retired-chapter']));
   let requests = 0;
   for (const method of ['getHealth', 'getOrders', 'getOrder', 'createOrder'] as const) {
     t.mock.method(api, method, async () => { requests += 1; throw new Error('在线学习不能调用真实 API'); });
@@ -415,6 +442,8 @@ test('在线学习独立推演、切换重置且不会请求真实 API', async (
   const document = page.dom.window.document;
   assert.match(document.body.textContent!, /教学示意 · 非真实运行/);
   assert.match(document.body.textContent!, /没有运行 Temporal 后端/);
+  assert.match(document.querySelector('.study-reading-state')!.textContent!, /已标记读过 1 \/ 7/);
+  assert.deepEqual(JSON.parse(page.dom.window.localStorage.getItem('temporal4l.read-chapters.v1')!), ['start', 'retired-chapter']);
   assert.equal((page.button('上一步') as HTMLButtonElement).disabled, true);
   await page.click(page.button('下一步')!);
   assert.match(document.querySelector('.online-step-detail h3')!.textContent!, /Activity/);
@@ -426,9 +455,12 @@ test('在线学习独立推演、切换重置且不会请求真实 API', async (
   assert.equal((page.button('下一步') as HTMLButtonElement).disabled, true);
   await page.click(page.button('重新推演')!);
   assert.equal(document.querySelector('[aria-current="step"]')?.textContent, '01先保存基线');
-  await page.click(page.button('展开自测与练习')!);
+  await act(async () => {
+    page.dom.window.history.pushState(null, '', '#view=notes&chapter=start');
+    page.dom.window.dispatchEvent(new page.dom.window.HashChangeEvent('hashchange'));
+  });
   assert.equal(document.querySelectorAll('.self-check-question').length, 10);
-  assert.ok(document.querySelector('a[href="#local-lab"]'));
+  assert.ok(document.querySelector('a[href="#view=setup&chapter=start"]'));
   assert.equal(document.querySelectorAll('.connection-pill, .order-builder').length, 0);
   assert.equal(requests, 0);
 });

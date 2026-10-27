@@ -21,9 +21,9 @@
 
 ## 在线学习
 
-直接打开 **https://likebeans.github.io/temporal4l/**，无需安装依赖。在线版提供正常订单、Worker 恢复、响应丢失与幂等的逐步推演，九个主题的真实源码、自测与 Markdown 笔记导出，以及完整文档入口。
+直接打开 **https://likebeans.github.io/temporal4l/**，无需安装依赖。在线学习工作台提供七章站内课程、章节目录与搜索、上一章 / 下一章、可分享的章节链接，保留完整图示和表格。阅读时可切换正常订单、Worker 恢复、响应丢失与幂等推演，九个主题的真实源码，以及自测和 Markdown 笔记导出。
 
-GitHub Pages 只托管静态学习内容，**不会运行 Temporal、API 或 Worker**。推演明确标注为教学示意，不产生真实 History、运行结果或支付账本；停机恢复、故障注入和独立练习需按下文在本地验证。草稿仅在当前页面保留，关闭或刷新前请导出。
+GitHub Pages 只托管静态学习内容，**不会运行 Temporal、API 或 Worker**。推演明确标注为教学示意，不产生真实 History、运行结果或支付账本；停机恢复、故障注入和独立练习需按下文在本地验证。已读标记和手工笔记保存在当前浏览器，不上传、不跨设备同步，也不代表真实实验通过；存储不可用时仍可使用页面，重要笔记请导出备份。
 
 维护与预览步骤见 [GitHub Pages 部署说明](docs/github-pages.md)。
 
@@ -177,7 +177,7 @@ npm run dev:web
 
 ## 自测与独立练习
 
-完成五阶段后，展开页面底部「自测与迁移练习」：先回答 10 个开放题，再展开参考要点核对；手工填写预测、操作与真实运行证据，最后导出 Markdown。草稿只保留在本次页面中，刷新或关闭会清空；页面不自动评分、不保存学习进度。离线入口为[自测文档](docs/self-check.md)和[实验记录模板](docs/experiment-record-template.md)。
+完成五阶段后，展开页面底部「自测与迁移练习」：先回答 10 个开放题，再展开参考要点核对；手工填写预测、操作与真实运行证据，最后导出 Markdown。作答和手工笔记会尝试自动保存到当前浏览器，刷新后可继续；存储不可用时提示导出。页面不自动评分，已读标记不代表实验通过。离线入口为[自测文档](docs/self-check.md)和[实验记录模板](docs/experiment-record-template.md)。
 
 [资料审核迁移练习](exercises/01-transfer/01.01-document-review/problem/readme.md)提供独立题目与参考实现。先在 `problem/workflow.ts` 自行实现准备资料 → Signal / 超时等待 → 归档或清理，再用 CLI 核对正常完成、等待时恢复、响应丢失后的幂等，以及超时 / 取消清理。练习使用专用 Task Queue `temporal-learning-document-review` 与独立 `.data/document-review.db`，不会进入订单列表；无需停止当前订单服务。切换题目和参考 Worker 前须按题目说明结束练习中的 Run，并停止对应练习 Worker。
 

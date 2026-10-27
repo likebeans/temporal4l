@@ -66,23 +66,23 @@
 
 @layer tokens {
   :root {
-    --page: #f3f0e8;
-    --page-deep: #ebe7dc;
-    --surface: #fffefa;
+    --page: #f6f8fb;
+    --page-deep: #edf1f7;
+    --surface: #ffffff;
     --surface-raised: #ffffff;
-    --surface-soft: #f7f5ef;
-    --surface-tint: #edf7f3;
-    --ink: #1c2824;
-    --ink-soft: #45554f;
-    --ink-muted: #5b6863;
-    --ink-faint: #68746f;
-    --topbar: #202925;
-    --topbar-soft: #2b3631;
-    --line: #dddcd5;
-    --line-strong: #c8ccc6;
-    --accent: #16745f;
-    --accent-strong: #0f5f4d;
-    --accent-soft: #dcefe8;
+    --surface-soft: #f6f8fc;
+    --surface-tint: #f0f5ff;
+    --ink: #18243b;
+    --ink-soft: #465570;
+    --ink-muted: #596982;
+    --ink-faint: #67758c;
+    --topbar: #ffffff;
+    --topbar-soft: #eef3fc;
+    --line: #e2e8f1;
+    --line-strong: #b6c2d3;
+    --accent: #345edb;
+    --accent-strong: #284cb7;
+    --accent-soft: #eaf0ff;
     --teal: #167b79;
     --warning: #8b5c0f;
     --warning-soft: #fbefd3;
@@ -92,9 +92,11 @@
     --success: #1b6b51;
     --success-soft: #e2f1e9;
     --neutral-soft: #eceeec;
-    --focus: #0d8271;
-    --shadow-sm: 0 1px 2px rgba(26, 38, 33, 0.05), 0 6px 18px rgba(26, 38, 33, 0.04);
-    --shadow-md: 0 1px 2px rgba(26, 38, 33, 0.05), 0 14px 36px rgba(26, 38, 33, 0.07);
+    --focus: #345edb;
+    --code-bg: #152139;
+    --code-ink: #e2eaf8;
+    --shadow-sm: 0 2px 6px rgba(24, 36, 59, 0.025);
+    --shadow-md: 0 12px 32px rgba(24, 36, 59, 0.07);
     --radius-sm: 8px;
     --radius-md: 12px;
     --radius-lg: 16px;
@@ -181,9 +183,9 @@
   .topbar {
     position: relative;
     z-index: 20;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid var(--line);
     background: var(--topbar);
-    color: #f5f8f6;
+    color: var(--ink);
   }
 
   .topbar__inner {
@@ -200,7 +202,7 @@
   .page-shell {
     width: min(100% - clamp(32px, 5vw, 72px), 1460px);
     margin: 0 auto;
-    padding: clamp(36px, 5vw, 72px) 0 56px;
+    padding: clamp(28px, 3vw, 44px) 0 56px;
   }
 
   .page-intro {
@@ -218,9 +220,9 @@
   .page-intro h1 {
     max-width: 780px;
     margin-top: 10px;
-    font-size: clamp(2.25rem, 4.6vw, 4.45rem);
-    line-height: 0.98;
-    letter-spacing: -0.055em;
+    font-size: clamp(1.9rem, 3.2vw, 2.8rem);
+    line-height: 1.25;
+    letter-spacing: -0.04em;
     text-wrap: balance;
   }
 
@@ -292,10 +294,10 @@
     width: 42px;
     height: 42px;
     flex: 0 0 auto;
-    border: 1px solid rgba(255, 255, 255, 0.18);
+    border: 1px solid var(--accent-strong);
     border-radius: 11px;
-    background: #304039;
-    color: #89d8bd;
+    background: var(--accent-strong);
+    color: var(--surface);
     place-items: center;
   }
 
@@ -313,7 +315,7 @@
 
   .brand__copy span {
     overflow: hidden;
-    color: #aebbb5;
+    color: var(--ink-muted);
     font-family: var(--font-mono);
     font-size: 0.68rem;
     letter-spacing: 0.02em;
@@ -340,9 +342,9 @@
 
   .topbar-button {
     padding: 0 13px;
-    border: 1px solid rgba(255, 255, 255, 0.13);
-    background: transparent;
-    color: #edf3f0;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--ink-soft);
     font-size: 0.82rem;
     font-weight: 650;
     text-decoration: none;
@@ -350,18 +352,19 @@
   }
 
   .topbar-button:hover {
-    border-color: rgba(255, 255, 255, 0.25);
-    background: rgba(255, 255, 255, 0.07);
+    border-color: var(--line-strong);
+    background: var(--surface-soft);
   }
 
   .topbar-button--accent {
-    border-color: #327e69;
-    background: #286451;
+    border-color: var(--accent-strong);
+    background: var(--accent-strong);
+    color: var(--surface);
   }
 
   .topbar-button--accent:hover {
-    border-color: #58a98f;
-    background: #327661;
+    border-color: var(--accent);
+    background: var(--accent);
   }
 
   .topbar-button--disabled {
@@ -370,7 +373,7 @@
 
   .connection-pill {
     padding: 0 12px;
-    color: #bec9c4;
+    color: var(--ink-muted);
     font-size: 0.76rem;
     font-weight: 620;
   }
@@ -626,7 +629,7 @@
   .learning-guide {
     margin-bottom: 20px;
     padding: 24px;
-    border: 1px solid #bbd8cd;
+    border: 1px solid var(--line);
     border-radius: var(--radius-lg);
     background: var(--surface-tint);
     box-shadow: var(--shadow-sm);
@@ -3713,7 +3716,7 @@
     }
 
     .page-intro h1 {
-      font-size: clamp(2.15rem, 14vw, 3.1rem);
+      font-size: clamp(1.8rem, 8vw, 2.4rem);
     }
 
     .page-intro__subtitle {
