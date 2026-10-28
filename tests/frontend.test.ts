@@ -62,7 +62,9 @@ async function browser(t: test.TestContext) {
     },
     async click(element: Element | null) {
       assert.ok(element, '交互目标必须存在');
-      await act(async () => element.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true })));
+      const event = new dom.window.MouseEvent('click', { bubbles: true, cancelable: true });
+      await act(async () => element.dispatchEvent(event));
+      return event;
     },
     button(text: string) {
       return [...dom.window.document.querySelectorAll('button')].find((button) => button.textContent?.includes(text));
@@ -446,7 +448,8 @@ test('在线学习独立推演、切换重置且不会请求真实 API', async (
   page.dom.window.document.body.prepend(skipLink);
   const { default: OnlineLearning } = await import('../src/components/OnlineLearning');
   await act(async () => page.root.render(createElement(OnlineLearning)));
-  await page.click(skipLink);
+  const click = await page.click(skipLink);
+  assert.equal(click.defaultPrevented, true, '跳过链接必须取消默认导航，保留课程地址');
   assert.equal(page.dom.window.location.hash, '#view=walkthrough&chapter=start');
   assert.equal(page.dom.window.document.activeElement?.id, 'main-content');
   const document = page.dom.window.document;
