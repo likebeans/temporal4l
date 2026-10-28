@@ -46,7 +46,7 @@ export function ApprovalComparison({
         <span className="approval-callout__icon" aria-hidden="true"><MessageSquareMore size={19} /></span>
         <div>
           <h3 id={`${id}-title`}>Signal / Update 对照</h3>
-          <p>同一次订单确认，观察两种返回语义。每条订单只需确认一次，比较另一种方式时请创建新订单。</p>
+          <p>每条订单只需确认一次，比较另一种方式请创建新订单。</p>
         </div>
       </div>
 

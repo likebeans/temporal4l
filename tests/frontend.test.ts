@@ -506,6 +506,7 @@ test('实验工作区切换保留表单与禁用存储时的草稿，支持标�
   const { default: App } = await import('../src/App');
   await act(async () => page.root.render(createElement(App)));
   const document = page.dom.window.document;
+  await page.click(document.getElementById('lab-mode-tab-setup'));
   const customer = document.getElementById('customerName') as HTMLInputElement;
   const setter = Object.getOwnPropertyDescriptor(page.dom.window.HTMLInputElement.prototype, 'value')!.set!;
   await act(async () => { setter.call(customer, '我的学习订单'); customer.dispatchEvent(new page.dom.window.Event('input', { bubbles: true })); });
@@ -515,6 +516,11 @@ test('实验工作区切换保留表单与禁用存储时的草稿，支持标�
   assert.equal(document.activeElement?.id, 'lab-setup-tab-create');
   assert.equal(document.getElementById('lab-setup-panel-create')!.hidden, false);
   assert.equal(customer.value, '我的学习订单');
+  await page.click(document.getElementById('lab-mode-tab-run'));
+  await page.click(document.getElementById('lab-mode-tab-inspect'));
+  await page.click(document.getElementById('lab-mode-tab-setup'));
+  assert.equal(document.getElementById('customerName'), customer);
+  assert.equal(customer.value, '我的学习订单', '切换实验任务不丢失表单');
   await page.click(document.querySelector('.lab-navigation a[href="#learning-practice"]'));
   const answer = document.querySelector<HTMLTextAreaElement>('[id$="-answer-roles"]')!;
   const setAnswer = Object.getOwnPropertyDescriptor(page.dom.window.HTMLTextAreaElement.prototype, 'value')!.set!;
@@ -533,6 +539,51 @@ test('实验工作区切换保留表单与禁用存储时的草稿，支持标�
   assert.equal(create.mock.calls.length, 0);
 });
 
+test('空态进入准备实验，创建失败保留输入，创建或选择成功转入观察', async (t) => {
+  const page = await browser(t);
+  let created = false;
+  let attempts = 0;
+  t.mock.method(api, 'getHealth', async () => ({ temporal: true, worker: true, namespace: 'test', taskQueue: 'test', temporalUiUrl: 'http://localhost:8233' }));
+  t.mock.method(api, 'getOrders', async () => ({ orders: created ? [{ workflowId, runId, status: 'RUNNING', startedAt: observedAt }] : [] }));
+  t.mock.method(api, 'getOrder', async () => waitingDetail());
+  const create = t.mock.method(api, 'createOrder', async () => {
+    attempts += 1;
+    if (attempts === 1) throw new Error('暂时无法启动订单');
+    created = true;
+    return { workflowId, runId };
+  });
+  const { default: App } = await import('../src/App');
+  await act(async () => page.root.render(createElement(App)));
+  const document = page.dom.window.document;
+  assert.equal(document.getElementById('lab')!.dataset.view, 'run');
+  await page.click(page.button('准备第一条实验订单')!);
+  assert.equal(document.getElementById('lab')!.dataset.view, 'setup');
+  assert.equal(document.activeElement?.id, 'create-order-title');
+  const customer = document.getElementById('customerName') as HTMLInputElement;
+  const setter = Object.getOwnPropertyDescriptor(page.dom.window.HTMLInputElement.prototype, 'value')!.set!;
+  await act(async () => {
+    setter.call(customer, '创建交互验收');
+    customer.dispatchEvent(new page.dom.window.Event('input', { bubbles: true }));
+  });
+  await page.click(page.button('启动订单 Workflow')!);
+  assert.equal(document.getElementById('lab')!.dataset.view, 'setup');
+  assert.match(document.querySelector('.order-form')!.textContent!, /暂时无法启动订单/);
+  assert.equal(customer.value, '创建交互验收');
+  await page.click(page.button('启动订单 Workflow')!);
+  assert.equal(create.mock.calls.length, 2);
+  assert.equal(document.getElementById('lab')!.dataset.view, 'run');
+  assert.equal(document.activeElement?.id, 'workflow-path-title');
+  assert.equal(document.querySelector('.inspector [role="tab"][aria-selected="true"]')?.textContent?.trim(), '事件历史0');
+  await page.tick(4_000);
+  await page.click(document.getElementById('lab-mode-tab-setup'));
+  assert.equal(document.getElementById('customerName'), customer);
+  assert.equal(customer.value, '创建交互验收');
+  await page.click(document.getElementById('lab-setup-tab-history'));
+  await page.click(document.querySelector('.history-item'));
+  assert.equal(document.getElementById('lab')!.dataset.view, 'run');
+  assert.equal(document.activeElement?.id, 'workflow-path-title');
+});
+
 for (const [target, view] of [
   ['recent-orders-title', 'setup'],
   ['workflow-path-title', 'run'],
@@ -548,14 +599,16 @@ for (const [target, view] of [
     const document = page.dom.window.document;
     function assertTarget() {
       assert.equal(document.getElementById('lab')!.hidden, false);
-      assert.equal(document.getElementById(`lab-mobile-panel-${view}`)!.dataset.mobileActive, 'true');
+      assert.equal(document.getElementById(`lab-mode-panel-${view}`)!.hidden, false);
+      assert.equal(document.getElementById('lab')!.dataset.view, view);
       if (view === 'setup') assert.equal(document.getElementById('lab-setup-panel-history')!.hidden, false);
       assert.equal(document.activeElement?.id, target);
-      assert.equal(document.getElementById('lab')!.classList.contains('is-evidence-expanded'), false);
+      assert.equal(document.getElementById(`lab-mode-tab-${view}`)!.getAttribute('aria-pressed'), 'true');
     }
     assertTarget();
+    await page.click(document.getElementById('lab-mode-tab-setup'));
     await page.click(document.getElementById('lab-setup-tab-create'));
-    await page.click(page.button('展开阅读')!);
+    await page.click(document.getElementById('lab-mode-tab-inspect'));
     await page.click(document.querySelector('.lab-navigation a[href="#learning-practice"]'));
     await act(async () => {
       page.dom.window.history.replaceState(null, '', `#${target}`);
@@ -606,12 +659,23 @@ test('当前运行切换视图保留 Update 选择与未知结果，回执恢复
   assert.equal(document.activeElement?.id, 'run-view-tab-actions', '提示按钮隐藏后焦点应移到已显示的操作标签');
   await page.click(document.querySelector('input[value="update"]'));
   await page.click(document.querySelector('.approval-validation input'));
+  const scroller = document.querySelector<HTMLElement>('.workflow-scroll')!;
+  scroller.scrollTop = 180;
+  await page.tick(1_500);
+  assert.equal(scroller.scrollTop, 180, '同一 Run 的轮询不打断阅读');
   await page.click(document.getElementById('run-view-tab-steps'));
+  assert.equal(scroller.scrollTop, 0, '主动切换运行子页从顶部开始');
   await page.click(document.getElementById('run-view-tab-actions'));
   assert.equal(document.querySelector<HTMLInputElement>('input[value="update"]')!.checked, true);
   assert.equal(document.querySelector<HTMLInputElement>('.approval-validation input')!.checked, true);
   await page.click(page.button('发送确认 Update')!);
   assert.equal(update.mock.calls.length, 1);
+  const confirmation = document.querySelector('.approval-validation input');
+  await page.click(document.getElementById('lab-mode-tab-setup'));
+  await page.click(document.getElementById('lab-mode-tab-inspect'));
+  await page.click(document.getElementById('lab-mode-tab-run'));
+  assert.equal(document.querySelector('.approval-validation input'), confirmation, '切换任务模式保留同一确认组件');
+  assert.match(document.querySelector('.approval-feedback')!.textContent!, /Update ID/);
   await page.click(document.getElementById('run-view-tab-effects'));
   assert.match(document.querySelector('.run-action-prompt')!.textContent!, /Update 结果未知/);
   await page.click(page.button('查看恢复操作')!);
