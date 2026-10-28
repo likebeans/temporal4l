@@ -10,6 +10,7 @@ import { SourceEvidencePanel } from './SourceEvidencePanel';
 type TabId = 'state' | 'history' | 'evidence' | 'code';
 
 interface InspectorTabsProps {
+  initialTab?: TabId;
   expanded?: boolean;
   onToggleExpanded?: () => void;
   detail: OrderDetail | null;
@@ -98,8 +99,8 @@ if (input.scenario === 'heartbeat' || input.scenario === 'heartbeat_timeout') {
 }
 state.trackingNumber = await shipOrder(activityArgs)`;
 
-export function InspectorTabs({ detail, queryFresh = false, responseFresh = false, feedback, expanded = false, onToggleExpanded }: InspectorTabsProps) {
-  const [activeTab, setActiveTab] = useState<TabId>('state');
+export function InspectorTabs({ detail, queryFresh = false, responseFresh = false, feedback, initialTab = 'state', expanded = false, onToggleExpanded }: InspectorTabsProps) {
+  const [activeTab, setActiveTab] = useState<TabId>(initialTab);
   const [historyTarget, setHistoryTarget] = useState<{ workflowId: string; runId: string; eventId: string } | null>(null);
   const baseId = useId();
   const target = historyTarget?.workflowId === detail?.workflowId && historyTarget?.runId === detail?.runId ? historyTarget : null;
@@ -194,12 +195,12 @@ export function InspectorTabs({ detail, queryFresh = false, responseFresh = fals
           detail?.history.length ? (
             <div className="event-view">
               {!responseFresh && <p className="inspector-stale" role="status">History 保留自上次响应，尚未刷新成功；以下事件仅供回看。</p>}
-              <div className="history-explainer">
-                <Info size={17} aria-hidden="true" />
+              <details className="history-explainer">
+                <summary><Info size={17} aria-hidden="true" />如何理解这些事件</summary>
                 <p>
                   这里展示服务端从 Temporal 历史转换出的真实事件。Update 通过校验后可看到 Accepted / Completed；validator 拒绝通常不写入这两类事件，以请求返回为准。Activity 中间重试可能被聚合；心跳来自 Describe，付款流水来自独立 SQLite 账本。
                 </p>
-              </div>
+              </details>
               <ol className="event-list">
                 {detail.history.map((event) => {
                   const Icon = categoryIcons[event.category];

@@ -22,12 +22,12 @@ const workspaces = [
   { id: 'notes', label: '自测笔记', icon: FilePenLine, hash: '#learning-practice' },
 ] as const;
 type Workspace = typeof workspaces[number]['id'];
-const mobileViews = [
-  { id: 'setup', label: '创建 / 最近' },
-  { id: 'run', label: '当前运行' },
-  { id: 'inspect', label: '运行证据' },
+const labViews = [
+  { id: 'setup', label: '准备实验' },
+  { id: 'run', label: '观察运行' },
+  { id: 'inspect', label: '查看证据' },
 ] as const;
-type MobileView = typeof mobileViews[number]['id'];
+type LabView = typeof labViews[number]['id'];
 const setupViews = [
   { id: 'create', label: '创建订单' },
   { id: 'history', label: '最近实验' },
@@ -35,7 +35,7 @@ const setupViews = [
 
 interface WorkspaceNavigation {
   workspace: Workspace;
-  mobileView?: MobileView;
+  labView?: LabView;
   setupView?: 'create' | 'history';
   target: string;
 }
@@ -45,11 +45,11 @@ function navigationForHash(hash: string): WorkspaceNavigation {
   if (['recovery', 'recovery-title'].includes(target)) return { workspace: 'recovery', target };
   if (['learning-guide', 'learning-guide-title'].includes(target)) return { workspace: 'guide', target };
   if (['learning-practice', 'learning-practice-title'].includes(target)) return { workspace: 'notes', target };
-  if (target === 'recent-orders-title') return { workspace: 'lab', mobileView: 'setup', setupView: 'history', target };
-  if (target === 'workflow-path-title') return { workspace: 'lab', mobileView: 'run', target };
-  if (target === 'inspector-title') return { workspace: 'lab', mobileView: 'inspect', target };
+  if (target === 'recent-orders-title') return { workspace: 'lab', labView: 'setup', setupView: 'history', target };
+  if (target === 'workflow-path-title') return { workspace: 'lab', labView: 'run', target };
+  if (target === 'inspector-title') return { workspace: 'lab', labView: 'inspect', target };
   if (['create-order-title', 'customerName', 'productId', 'quantity', 'scenario', 'approvalTimeoutSeconds'].includes(target)) {
-    return { workspace: 'lab', mobileView: 'setup', setupView: 'create', target };
+    return { workspace: 'lab', labView: 'setup', setupView: 'create', target };
   }
   return { workspace: 'lab', target: target === 'page-title' ? 'workspace-title' : target };
 }
@@ -114,9 +114,8 @@ export default function App() {
   const [guideOpen, setGuideOpen] = useState(initialNavigation.workspace === 'guide');
   const [recoveryActive, setRecoveryActive] = useState(false);
   const [workspace, setWorkspace] = useState<Workspace>(initialNavigation.workspace);
-  const [mobileView, setMobileView] = useState<MobileView>(initialNavigation.mobileView ?? 'setup');
+  const [labView, setLabView] = useState<LabView>(initialNavigation.labView ?? 'run');
   const [setupView, setSetupView] = useState<'create' | 'history'>(initialNavigation.setupView ?? 'create');
-  const [evidenceExpanded, setEvidenceExpanded] = useState(false);
   const [navigationTarget, setNavigationTarget] = useState<string | null>(
     () => window.location.hash ? initialNavigation.target : null,
   );
@@ -129,9 +128,8 @@ export default function App() {
       const next = navigationForHash(hash);
       setWorkspace(next.workspace);
       if (next.workspace === 'guide') setGuideOpen(true);
-      if (next.mobileView) setMobileView(next.mobileView);
+      if (next.labView) setLabView(next.labView);
       if (next.setupView) setSetupView(next.setupView);
-      if (next.workspace === 'lab') setEvidenceExpanded(false);
       setNavigationTarget(next.target);
     }
     window.addEventListener('hashchange', navigate);
@@ -149,12 +147,12 @@ export default function App() {
     target?.focus({ preventScroll: true });
     target?.scrollIntoView?.({ block: 'nearest' });
     setNavigationTarget(null);
-  }, [navigationTarget, workspace, mobileView, setupView]);
+  }, [navigationTarget, workspace, labView, setupView]);
 
   function openWorkspace(next: Workspace) {
     setWorkspace(next);
     if (next === 'guide') setGuideOpen(true);
-    if (next === 'lab') setEvidenceExpanded(false);
+    if (next === 'lab') setLabView('run');
     setNavigationTarget(next === 'recovery' ? 'recovery-title' : next === 'notes' ? 'learning-practice-title' : next === 'guide' ? 'learning-guide-title' : 'workspace-title');
   }
 
@@ -514,7 +512,7 @@ export default function App() {
           </nav>
         </div>
 
-        <div className="lab-environment">
+        <div className="lab-environment" hidden={healthChecked && connected && !recoveryActive}>
           {!healthChecked ? (
             <div className="environment-check" role="status">
               <LoaderCircle className="spin" size={18} aria-hidden="true" />
@@ -561,7 +559,7 @@ export default function App() {
           <LearningGuide open={guideOpen} onToggle={toggleGuide} onNavigate={(target) => {
             window.history.pushState(null, '', `#${target}`);
             openWorkspace(target === 'learning-practice' ? 'notes' : 'lab');
-            if (target === 'create-order-title') { setSetupView('create'); setMobileView('setup'); }
+            if (target === 'create-order-title') { setSetupView('create'); setLabView('setup'); }
             setNavigationTarget(target);
           }} />
         </div>
@@ -569,15 +567,22 @@ export default function App() {
           <LearningPractice expanded />
         </div>
 
-        <div className={`lab-workspace lab-experiment${evidenceExpanded ? ' is-evidence-expanded' : ''}`} id="lab" hidden={workspace !== 'lab'}>
-          <WorkspaceTabs id="lab-mobile" label="实验台视图" className="lab-mobile-tabs" items={mobileViews} value={mobileView} onChange={setMobileView} />
+        <div className="lab-workspace lab-experiment" data-view={labView} id="lab" hidden={workspace !== 'lab'}>
+          <div className="lab-mode-bar">
+            <div className="workspace-tabs lab-mode-options" role="group" aria-label="实验台视图">
+              {labViews.map(({ id, label }) => (
+                <button key={id} type="button" id={`lab-mode-tab-${id}`} aria-pressed={labView === id} aria-controls={`lab-mode-panel-${id}`} onClick={() => setLabView(id)}>{label}</button>
+              ))}
+            </div>
+            <p>{labView === 'setup' ? '创建或选择一条订单，准备好后开始观察' : labView === 'run' ? '跟随流程操作，再对照真实事件' : '专注阅读 History、状态与源码'}</p>
+          </div>
           <div className="lab-columns">
-            <section className="lab-column lab-setup" id="lab-mobile-panel-setup" role="tabpanel" aria-labelledby="lab-mobile-tab-setup" data-mobile-active={mobileView === 'setup'}>
+            <section className="lab-column lab-setup" id="lab-mode-panel-setup" role="region" aria-label="准备实验" hidden={labView !== 'setup'}>
               <WorkspaceTabs id="lab-setup" label="实验选择" items={setupViews} value={setupView} onChange={setSetupView} />
               <div className="lab-scroll-pane" role="tabpanel" id="lab-setup-panel-create" aria-labelledby="lab-setup-tab-create" hidden={setupView !== 'create'}>
                 <OrderForm compact connected={connected} pending={createPending} requestError={createError} onSubmit={async (input) => {
                   if (await createOrder(input)) {
-                    setMobileView('run');
+                    setLabView('run');
                     setNavigationTarget('workflow-path-title');
                   }
                 }} />
@@ -585,12 +590,12 @@ export default function App() {
               <div className="lab-scroll-pane" role="tabpanel" id="lab-setup-panel-history" aria-labelledby="lab-setup-tab-history" hidden={setupView !== 'history'}>
                 <OrderHistory orders={orders} selectedWorkflowId={selectedWorkflowId} loading={ordersLoading} error={ordersError} onSelect={(id) => {
                   selectWorkflow(id);
-                  setMobileView('run');
+                  setLabView('run');
                   setNavigationTarget('workflow-path-title');
                 }} />
               </div>
             </section>
-            <section className="lab-column lab-run" id="lab-mobile-panel-run" role="tabpanel" aria-labelledby="lab-mobile-tab-run" data-mobile-active={mobileView === 'run'}>
+            <section className="lab-column lab-run" id="lab-mode-panel-run" role="region" aria-label="当前运行" hidden={labView === 'inspect'}>
               <WorkflowPanel
                 detail={visibleDetail}
                 requestedWorkflowId={selectedWorkflowId}
@@ -609,15 +614,14 @@ export default function App() {
                 onApprove={approveOrder}
                 onUpdate={approveOrderUpdate}
                 onCancel={cancelOrder}
+                onPrepare={() => { setSetupView('create'); setLabView('setup'); setNavigationTarget('create-order-title'); }}
               />
             </section>
-            <section className="lab-column lab-inspect" id="lab-mobile-panel-inspect" role="tabpanel" aria-labelledby="lab-mobile-tab-inspect" data-mobile-active={mobileView === 'inspect'}>
+            <section className="lab-column lab-inspect" id="lab-mode-panel-inspect" role="region" aria-label="运行证据" hidden={labView === 'setup'}>
               <InspectorTabs
-                expanded={evidenceExpanded}
-                onToggleExpanded={() => {
-                  setEvidenceExpanded((value) => !value);
-                  setMobileView('inspect');
-                }}
+                initialTab="history"
+                expanded={labView === 'inspect'}
+                onToggleExpanded={() => setLabView((view) => view === 'inspect' ? 'run' : 'inspect')}
                 detail={visibleDetail}
                 queryFresh={Boolean(visibleDetail?.state && !visibleDetail.stateError && !detailStale && !detailObservationStale)}
                 responseFresh={Boolean(visibleDetail && !detailObservationStale)}

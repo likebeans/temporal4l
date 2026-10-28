@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Activity,
   AlertTriangle,
@@ -70,6 +70,7 @@ interface WorkflowPanelProps {
   onApprove: () => Promise<void>;
   onUpdate: (confirmed: boolean, recovery?: 'query' | 'retry') => Promise<void>;
   onCancel: () => Promise<void>;
+  onPrepare?: () => void;
 }
 
 const stepIcons: Record<StepStatus, ComponentType<{ size?: number; 'aria-hidden'?: boolean; className?: string }>> = {
@@ -158,16 +159,14 @@ function StatusOverview({ detail, queryStale, observationStale }: {
         ) : (
           <strong className="status-card__unavailable">暂不可用</strong>
         )}
-        <small>{queryStale ? '保留自同一 Run 的上次快照' : state ? 'Workflow 公开的业务进度' : '当前响应未取得 Query 快照'}</small>
-        {queryStale && <span className="freshness-label freshness-label--stale">已过期</span>}
+        {(queryStale || !state) && <small>{queryStale ? '已过期 · 保留自同一 Run 的上次快照' : '当前响应未取得 Query 快照'}</small>}
       </div>
       <div className="status-card">
-        <span className="status-card__label">执行状态 · Temporal Describe</span>
+        <span className="status-card__label">执行状态 · Describe</span>
         <span className={`status-badge status-badge--${orderStatusTone(detail.status)}`}>
           <span aria-hidden="true" />
-          {orderStatusLabel(detail.status)}
+          <code>{detail.status}</code>
         </span>
-        <small><code>{detail.status}</code> · 本次 Run</small>
         {observationStale && <span className="freshness-label freshness-label--stale">上次响应</span>}
       </div>
       <p className="status-overview__time">
@@ -414,6 +413,7 @@ export function WorkflowPanel({
   onApprove,
   onUpdate,
   onCancel,
+  onPrepare,
 }: WorkflowPanelProps) {
   const state = detail?.state ?? null;
   const executionTerminal = detail ? isTerminalExecutionStatus(detail.status) : false;
@@ -424,7 +424,11 @@ export function WorkflowPanel({
   const temporalWorkflowUrl = detail ? buildTemporalWorkflowUrl(health, detail) : null;
   const actionAwaiting = actionPhase === 'awaiting';
   const [view, setView] = useState<RunView>('steps');
+  const scrollRef = useRef<HTMLDivElement>(null);
   useEffect(() => setView('steps'), [detail?.runId]);
+  useEffect(() => {
+    if (scrollRef.current) scrollRef.current.scrollTop = 0;
+  }, [view, detail?.runId]);
   const needsApproval = state?.status === 'waiting_approval' && !executionTerminal && controlsFresh;
 
   return (
@@ -450,6 +454,7 @@ export function WorkflowPanel({
         )}
       </div>
 
+      <div className="workflow-scroll" ref={scrollRef}>
       {detail && observationStale && (
         <div className="stale-banner" role="status">
           <RotateCw size={17} aria-hidden="true" />
@@ -470,7 +475,8 @@ export function WorkflowPanel({
         <div className="workflow-empty">
           <span className="workflow-empty__icon" aria-hidden="true"><Workflow size={26} /></span>
           <h3>准备观察第一条 Workflow</h3>
-          <p>从左侧创建实验订单，或从“最近实验”中选择一次运行。真实步骤会在 Query 返回后出现在这里。</p>
+          <p>在“准备实验”中创建订单，或从“最近实验”中选择一次运行。真实步骤会在 Query 返回后出现在这里。</p>
+          {onPrepare && <button type="button" className="primary-button primary-button--compact" onClick={onPrepare}>准备第一条实验订单<ArrowRight size={16} aria-hidden="true" /></button>}
         </div>
       ) : loading && !detail ? (
         <div className="workflow-empty" role="status">
@@ -620,6 +626,7 @@ export function WorkflowPanel({
           )}
         </>
       ) : null}
+      </div>
     </section>
   );
 }

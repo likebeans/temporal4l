@@ -1,4 +1,4 @@
-import { BookOpen, ExternalLink, GitBranch, Server, Waypoints } from 'lucide-react';
+import { BookOpen, ChevronDown, ExternalLink, GitBranch, Server, Waypoints } from 'lucide-react';
 import type { HealthResponse } from '../../shared/types';
 
 interface HeaderProps {
@@ -46,11 +46,19 @@ export function Header({ health, healthError, guideOpen, onToggleGuide }: Header
           <a className="topbar-button" href="https://likebeans.github.io/temporal4l/" target="_blank" rel="noreferrer">
             <BookOpen size={17} aria-hidden="true" />在线课程<ExternalLink size={14} aria-hidden="true" />
           </a>
-          <div className={`connection-pill connection-pill--${ready ? 'ready' : healthError ? 'error' : 'pending'}`}>
-            <span className="connection-pill__dot" aria-hidden="true" />
-            <Server size={15} aria-hidden="true" />
-            <span>{statusLabel}</span>
-          </div>
+          <details className={`connection-pill connection-pill--${ready ? 'ready' : healthError ? 'error' : 'pending'}`}>
+            <summary>
+              <span className="connection-pill__dot" aria-hidden="true" />
+              <Server size={15} aria-hidden="true" />
+              <span>{statusLabel}</span>
+              <ChevronDown size={14} aria-hidden="true" />
+            </summary>
+            <div className="connection-details">
+              <p>命名空间 <code>{health?.namespace ?? '等待连接'}</code></p>
+              <p>Task Queue <code>{health?.taskQueue ?? '等待连接'}</code></p>
+              <p>Worker 就绪依据最近 90 秒的轮询记录；实时进程状态请以终端为准。</p>
+            </div>
+          </details>
           <button
             className="topbar-button"
             type="button"
