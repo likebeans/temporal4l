@@ -46,12 +46,12 @@
   },
   "dependencies": {
     "@fastify/static": "10.1.7",
-    "@temporalio/activity": "1.24.0",
-    "@temporalio/client": "1.24.0",
-    "@temporalio/common": "1.24.0",
-    "@temporalio/proto": "1.24.0",
-    "@temporalio/worker": "1.24.0",
-    "@temporalio/workflow": "1.24.0",
+    "@temporalio/activity": "1.25.0",
+    "@temporalio/client": "1.25.0",
+    "@temporalio/common": "1.25.0",
+    "@temporalio/proto": "1.25.0",
+    "@temporalio/worker": "1.25.0",
+    "@temporalio/workflow": "1.25.0",
     "fastify": "5.12.7",
     "lucide-react": "1.61.0",
     "react": "19.3.1",
@@ -62,7 +62,7 @@
     "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
-    "@temporalio/testing": "1.24.0",
+    "@temporalio/testing": "1.25.0",
     "@types/jsdom": "21.1.7",
     "@types/node": "^25.5.0",
     "@types/react": "^19.2.0",
